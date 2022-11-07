@@ -15,19 +15,23 @@ import os
 
 
 
+
 def create_csv():
     print("here0")
     all_rows = []
     col_names_csv = ['patient Number', 'cell index', 'cell size', 'Au','B7H3', 'Background', 'Beta catenin', 'C', 'Ca', 'CD3', 'CD4', 'CD8', 'CD11b', 'CD11c', 'CD16', 'CD20' , 'CD31', 'CD45', 'CD45RO', 'CD56', 'CD63', 'CD68', 'CD68', 'CD163', 'CD209', 'CD209', 'CellTypes', 'CSF-1R', 'dsDNA','EGFR','Fe','FoxP3','H3K9ac','H3K27me3','HLA_class_1','HLA-DR','IDO','Keratin6','Keratin17','Ki67','Lag3','MPO','Na','OX40','p','p53','Pan-Keratin','PD1','PD-L1','phospho-S6','Si','SMA','Ta','Vimentin' ]
     #list of all the proteins
-    #proteins = ['Au', 'B7H3','Background', 'Beta catenin', 'C', 'Ca', 'CD3', 'CD4', 'CD8', 'CD11b', 'CD11c', 'CD16', 'CD20' , 'CD31', 'CD45', 'CD45RO', 'CD56', 'CD63', 'CD68', 'CD68', 'CD163', 'CD209', 'CD209', 'CellTypes', 'CSF-1R','dsDNA','EGFR','Fe','FoxP3','H3K9ac','H3K27me3','HLA_class_1','HLA-DR','IDO','Keratin6','Keratin17','Ki67','Lag3','MPO','Na','OX40','p','p53','Pan-Keratin','PD1','PD-L1','phospho-S6','Si','SMA','Ta','Vimentin']
-    proteins = ['Au', 'B7H3']
+    proteins = ['Au', 'B7H3','Background', 'Beta catenin', 'C', 'Ca', 'CD3', 'CD4', 'CD8', 'CD11b', 'CD11c', 'CD16', 'CD20' , 'CD31', 'CD45', 'CD45RO', 'CD56', 'CD63', 'CD68', 'CD68', 'CD163', 'CD209', 'CD209', 'CellTypes', 'CSF-1R','dsDNA','EGFR','Fe','FoxP3','H3K9ac','H3K27me3','HLA_class_1','HLA-DR','IDO','Keratin6','Keratin17','Ki67','Lag3','MPO','Na','OX40','p','p53','Pan-Keratin','PD1','PD-L1','phospho-S6','Si','SMA','Ta','Vimentin']
+    #proteins = ['Au', 'B7H3']
     all_rows.append(col_names_csv)
 
     root = tk.Tk()
     root.withdraw()
 
 
+
+    # the current patient starts from index
+    start_index_curr_patient = 1
 
     rootdir  = filedialog.askdirectory()
     print("1")
@@ -37,8 +41,11 @@ def create_csv():
     for patient in list_subfolders_with_paths:
         print(patient+'\GtSegmentationInterior.tiff')
 
+
+
+        oldIMG = Image.open(patient+'\GtSegmentationInterior.tiff')
         # convert img to np array
-        oldIMG = np.array(Image.open(patient+'\GtSegmentationInterior.tiff'))
+        oldIMG = np.array(oldIMG)
 
         # convert img to binary img
         img = np.where(oldIMG == 0, 0, 1)
@@ -50,11 +57,21 @@ def create_csv():
         mask = morphology.remove_small_holes(mask, 100)
         labels = measure.label(mask)
 
-        # fig = px.imshow(img, binary_string=True)
-        # fig.update_traces(hoverinfo='skip')  # hover is only for label info
+        #fig = px.imshow(img, binary_string=True)
+      #  fig.update_traces(hoverinfo='skip')  # hover is only for label info
 
         props = measure.regionprops(labels, img)
-        # properties = ['area', 'eccentricity', 'perimeter', 'intensity_mean']
+        properties = ['area', 'eccentricity', 'perimeter', 'intensity_mean']
+
+        for index in range(1, labels.max()):
+            label_i = props[index].label
+            contour = measure.find_contours(labels == label_i, 0.5)[0]
+            y, x = contour.T
+            hoverinfo = ''
+            row_data = [patient]
+            row_data.append(index)
+            row_data.append(getattr(props[index], 'area'))
+            all_rows.append(row_data)
 
         # For each label, add a filled scatter trace for its contour,
         # and display the properties of the label in the hover of this trace.
@@ -63,32 +80,26 @@ def create_csv():
             print("{}\{}.tiff".format(patient, protein))
             #print(protein_IMG)
             # convert img to np array
-
             protein_IMG = np.array(protein_IMG)
             for index in range(1, labels.max()):
-                # print(index)
-                label_i = props[index].label
-                contour = measure.find_contours(labels == label_i, 0.5)[0]
-                y, x = contour.T
-                hoverinfo = ''
-                row_data = [patient]
-                row_data.append(index)
-                row_data.append(getattr(props[index], 'area'))
                 list_of_indexes = getattr(props[index], 'coords')
 
+                all_rows[start_index_curr_patient+index-1].append(protein_IMG[list_of_indexes].sum())
 
-                row_data.append(protein_IMG[list_of_indexes].sum())
-                all_rows.append(row_data)
-        # for prop_name in properties:
-        #
-        #     hoverinfo += f'<b>{prop_name}: {getattr(props[index], prop_name):.2f}</b><br>'
 
-        # fig.add_trace(go.Scatter(
-        #     x=x, y=y, name=label_i,
-        #     mode='lines', fill='toself', showlegend=False,
-        #     hovertemplate=hoverinfo, hoveron='points+fills'))
-    # plotly.io.show(fig)
-    # print("done show")
+        start_index_curr_patient += labels.max()-1
+        print(start_index_curr_patient)
+
+        #for prop_name in properties:
+
+           # hoverinfo += f'<b>{prop_name}: {getattr(props[index], prop_name):.2f}</b><br>'
+
+       # fig.add_trace(go.Scatter(
+         #   x=x, y=y, name=label_i,
+          #  mode='lines', fill='toself', showlegend=False,
+          #  hovertemplate=hoverinfo, hoveron='points+fills'))
+   # plotly.io.show(fig)
+   # print("done show")
 
     with open('resultNew2.csv', 'w', encoding='UTF8', newline='') as f:
         writer = csv.writer(f)
@@ -149,10 +160,10 @@ def main():
 
 
 
-#
-# # Press the green button in the gutter to run the script.
-# if __name__ == '__main__':
-#     main()
+
+# Press the green button in the gutter to run the script.
+if __name__ == '__main__':
+    main()
 
 
 
