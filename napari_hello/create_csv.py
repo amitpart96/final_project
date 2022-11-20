@@ -64,7 +64,7 @@ def create_csv():
 
        # oldIMG = np.array(oldIMG)
         image = Image.open(patient + '\SegmentationInterior.tiff')
-        image = np.array(image2)
+        image = np.array(image)
 
         # convert img to binary img
         #img = np.where(oldIMG == 0, 0, 1)
