@@ -23,7 +23,6 @@ def create_csv():
     print("here0")
     all_rows = []
     col_names_csv = ['patient Number', 'cell index', 'cell size']
-    all_rows.append(col_names_csv)
 
     root = tk.Tk()
     root.withdraw()
