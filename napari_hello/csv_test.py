@@ -1,7 +1,6 @@
 import csv
 import pandas as pd
 from skimage import data, filters, measure, morphology
-
 import tkinter as tk
 from tkinter import filedialog
 

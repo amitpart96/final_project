@@ -72,9 +72,15 @@ def csv():
     show_info('create csv')
     return
 
+@magicgui(call_button='Ranking model')
+def rankingg_model():
+    ranking_model.main()
+    show_info('ranking model')
+    return
 
 viewer = napari.Viewer()
 viewer.window.add_dock_widget(csv, area='right')
+viewer.window.add_dock_widget(rankingg_model, area='right')
 
 
 @magicgui()
@@ -117,3 +123,7 @@ def csv():
 
 def csv_test_func():
     csv_test.main()
+
+
+def ranking_model():
+    ranking_model.main()

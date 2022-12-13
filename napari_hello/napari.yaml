@@ -10,6 +10,9 @@ contributions:
     - id: napari-hello.csv
       title: create csv
       python_name: napari_hello:csv
+    - id: napari-hello.ranking_model
+      title: ranking_model
+      python_name: napari_hello:ranking_model
   widgets:
     - command: napari-hello.say_hi  # note, same as command.id above
       display_name: Hello World
@@ -20,3 +23,7 @@ contributions:
     - command: napari-hello.csv
       display_name: csv
       autogenerate: true
+    - command: napari-hello.ranking_model
+      display_name: ranking_model
+      autogenerate: true
+
