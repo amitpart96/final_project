@@ -11,6 +11,7 @@ from napari.types import ImageData, LayerDataTuple
 from magicgui import magicgui
 from enum import Enum
 from napari.utils.notifications import show_info
+from napari_hello import ranking_model
 
 
 class Options(Enum):
@@ -125,5 +126,5 @@ def csv_test_func():
     csv_test.main()
 
 
-def ranking_model():
-    ranking_model.main()
+# def ranking_model():
+#     ranking_model.main()

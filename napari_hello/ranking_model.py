@@ -11,7 +11,7 @@ from sklearn.metrics import r2_score
 def ranking_model():
     GBR_scores, DTR_cor_scores, DTR_r2_scores = Counter(), Counter(), Counter()
     GBR_time, DTR_time = [], []
-    df = pd.read_csv("C:/Users/lidor/Downloads/Project2022/drive/TNBC_shareCellData/cellData.csv")
+    df = pd.read_csv("napari_hello/cellData.csv")
 
     value = random_int = randint(1, 44)  # random chooses patient for test
     print(f'testing patient number {value}:\n')
