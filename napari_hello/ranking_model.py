@@ -1,30 +1,44 @@
-import time
 from collections import Counter
 from random import randint
+
+import PIL
+#import cv2
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import r2_score
+import tkinter as tk
+from tkinter import filedialog as fd
+from PIL import Image
+#from tifffile import imshow
+import numpy as np
+from PIL import Image
 
+def save_img(matrix, file_name):
+    matrix = (matrix * 255).round().astype(np.uint8)
+    new_im = Image.fromarray(matrix)
+    #new_im.show()
+    image_filename = f'{file_name}.tiff'
+    print(image_filename)
+    # save image using extension
+    new_im.save(image_filename)
 
-def ranking_model():
-    GBR_scores, DTR_cor_scores, DTR_r2_scores = Counter(), Counter(), Counter()
-    GBR_time, DTR_time = [], []
-    df = pd.read_csv("napari_hello/cellData.csv")
+def ranking_model(df, patient_number,list_of_proteins_to_predict):
+    df = df.copy()
+    DTR_cor_scores, DTR_r2_scores, DTR_predictions = Counter(), Counter(), Counter()
 
-    value = random_int = randint(1, 44)  # random chooses patient for test
-    print(f'testing patient number {value}:\n')
+    print(f'testing patient number :{patient_number}\n')
+    df_train = df.loc[df['SampleID'] != patient_number]  # takes all patients for train, without patient patient_number for test
+    df_test = df.loc[df['SampleID'] == patient_number]  # takes only patient patient_number for test
 
-    df_train = df.loc[df['SampleID'] != value]  # takes all patients for train, without patient value for test
-    df_test = df.loc[df['SampleID'] == value]  # takes only patient value for test
-
-    proteins_list = ["dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31", "PD-L1", "EGFR",
-                     "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO", "CD20",
-                     "p53", "Beta catenin", "HLA-DR", "CD11b", "CD45", "H3K9ac", "Pan-Keratin", "H3K27me3",
+    proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31", "PD-L1",
+                     "EGFR",
+                     "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO",
+                     "CD20",
+                     "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
                      "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
 
-    for protein in proteins_list:
+    for protein in list_of_proteins_to_predict: #need to change to top 5 list
         # predict one protein , we will put it inside Y_train:
         y_train, y_test = df_train[protein], df_test[protein]
         print(f'predicting protein: {protein}')
@@ -34,43 +48,15 @@ def ranking_model():
         X_train, X_test = df_train[pl_copy], df_test[pl_copy]
 
         # DecisionTreeRegressor:
-        startDTR = time.time()
         DTR_cor_score, DTR_r2_score, DTR_prediction = model_DecisionTreeRegressor(X_train, y_train, X_test, y_test)
-        finishDTR = time.time()
-        DTR_time.append(finishDTR - startDTR)
         print(f'DTR r2 score: {DTR_r2_score}')
         print(f'DTR cor score: {DTR_cor_score[0, 1]}\n')
-        #print("DTR prediction: " + str(DTR_prediction))
+        # print("DTR prediction: " + str(DTR_prediction))
 
-
-        '''
-        # GradientBoostingRegressor:
-        startGBR = time.time()
-        GBR_score, GBR_prediction = model_GradientBoostingRegressor(X_train, y_train, X_test, y_test)
-        finishGBR = time.time()
-        GBR_time.append(finishGBR - startGBR)
-        print("GBR score: " + str(GBR_score[0, 1]))
-        # print("GBR prediction: " + str(GBR_prediction))
-        GBR_scores[protein] = GBR_score[0, 1]
-        '''
         DTR_cor_scores[protein] = float(DTR_cor_score[0, 1])
         DTR_r2_scores[protein] = DTR_r2_score
-
-    return DTR_cor_scores, DTR_r2_scores, sum(DTR_time)
-
-
-def model_GradientBoostingRegressor(X_train, y_train, X_test, y_test):
-    est = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=1, random_state=0,
-                                    loss='squared_error').fit(X_train, y_train)
-    prediction = est.predict(X_test)
-    if np.std(y_test.to_numpy()) == 0 or np.std(prediction) == 0:
-        print(
-            "The correlation could not be computed because the standard deviation of one of the series is equal to zero")
-        cor = np.zeros((2, 2))
-    else:
-        cor = calculate_correlation(y_test, prediction)
-    r2 = calculate_r2_score(y_test, prediction)
-    return cor, r2, prediction
+        DTR_predictions[protein] = DTR_prediction
+    return DTR_cor_scores, DTR_r2_scores, DTR_predictions
 
 
 def model_DecisionTreeRegressor(X_train, y_train, X_test, y_test):
@@ -90,56 +76,119 @@ def model_DecisionTreeRegressor(X_train, y_train, X_test, y_test):
 def calculate_correlation(y_test, prediction):
     return np.corrcoef(y_test.to_numpy(), prediction)
 
+
 def calculate_r2_score(y_test, prediction):
     return r2_score(y_test.to_numpy(), prediction)
 
 
-if __name__ == "__main__":
-    start = time.time()
-    DTR_scores, DTR_r2_scores, DTR_time = ranking_model()
-    # ranked_proteins_GBR = sorted(GBR_scores, key=GBR_scores.get, reverse=True)
-    ranked_proteins_DTR_by_cor = sorted(DTR_scores, key=DTR_scores.get, reverse=True)
-    ranked_proteins_DTR_by_r2 = sorted(DTR_r2_scores, key=DTR_r2_scores.get, reverse=True)
+def prediction_matrix_creation(DTR_prediction, df, patient_number, cellLabel_image):
+    df = df.copy()
+    protein_prediction = np.zeros((2048, 2048))
 
-    # print(f'ranked_proteins_GBR:\n{ranked_proteins_GBR}')
-    # print(f'total time of GBR: {GBR_time}\n')
+    patient_numer_df = df.loc[df['SampleID'] == patient_number]  # takes only the test patient
+    protein_cellLabel_df = patient_numer_df[['cellLabelInImage']]
+    protein_cellLabel_df["prediction"] = DTR_prediction
 
-    print(f'ranked_proteins_DTR_by_cor:\n{ranked_proteins_DTR_by_cor}')
-    print(f'ranked_proteins_DTR_by_r2:\n{ranked_proteins_DTR_by_r2}')
-    # print(f'total time of DTR: {DTR_time}\n')
+    for index, row in protein_cellLabel_df.iterrows():
+        protein_prediction[cellLabel_image == int(row['cellLabelInImage'])] = float(row['prediction'])
 
-    end = time.time()
-    total_time = end - start
-
-    print(f'total time: {total_time}')
-    # V להוסיף מדד r2 score (ולהדרג לפיו) מ-sklearn
-    # לקחת 3 פציאנטים ולעשו תעליהם ממוצע
-    # להכניס לפלאגאין
-    # V ניתאי ישלח רשימה מעודכנת של חלבונים
-    #
+    return protein_prediction
 
 
-# Press the green button in the gutter to run the script.
+def real_protein_matrix_creation(df, patient, protein,cellLabel_image):
+    df = df.copy()
+    patient_numer_df = df.loc[df['SampleID'] == patient]  # takes only the patient
+    protein_cellLabel_df = patient_numer_df[['cellLabelInImage', protein]]
+    real_protein_matrix = np.zeros((2048, 2048))
+
+    for index, row in protein_cellLabel_df.iterrows():
+        real_protein_matrix[cellLabel_image == int(row['cellLabelInImage'])] = float(row[protein])
+    return real_protein_matrix
+
+
+def five_patients_prediction(df,top_5_proteins):
+    df = df.copy()
+    for patient in range(1, 6): # need to chaznge to random 5 patients ???
+        print(f'starting patient number: {patient}')
+        flag = True
+        #get from user cellLabel image:
+        while flag:
+            try:
+                patient_labeled_cell_data = fd.askopenfilename()  # choose celldata of the patient
+                cellLabel_image = Image.open(patient_labeled_cell_data)
+                cellLabel_image = np.array(cellLabel_image)  # matrix of labeled cell data
+                flag = False
+            except:
+                print("incoreect path to celldata.tiff of the testing patient")
+
+        DTR_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient,top_5_proteins)
+        for protein, protein_prediction in DTR_prediction.items():  # DTR_prediction is a dictionary
+            print(f'starting protein : {protein}')
+            prediction_matrix = prediction_matrix_creation(protein_prediction, df, patient, cellLabel_image)
+            #prediction matrix to image:
+            save_img(prediction_matrix, f'protein_prediction_{patient}_{protein}')
+            # real protein matrix creation:
+            real_protein_matrix = real_protein_matrix_creation(df,patient,protein,cellLabel_image)
+            # real matrix to image:
+            save_img(real_protein_matrix,f'real_protein_{patient}_{protein}')
+            difference_matrix = abs(np.subtract(real_protein_matrix, prediction_matrix))
+            # difference_matrix to image:
+            save_img(difference_matrix, f'difference_matrix_{patient}_{protein}')
+            # save all 3 images for each protein and each patient ???
+            print(f'finished 3 images for protein: {protein}')
+        print(f'finished patient number: {patient}')
+    return
+
+
+
+def find_the_best_pro(df,protein_list):
+    df = df.copy()
+    array_r2_scores = []
+    for patient in range(1, 6):
+        print(f'starting patient number: {patient}')
+        DTR_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient,protein_list)
+        ranked_proteins_DTR_by_r2 = sorted(DTR_r2_scores, key=DTR_r2_scores.get, reverse=True)[:7]
+        array_r2_scores.append(ranked_proteins_DTR_by_r2)
+    print(f'array_r2_scores:{array_r2_scores}')
+
+
 def main():
-    start = time.time()
-    DTR_scores, DTR_r2_scores, DTR_time = ranking_model()
-    # ranked_proteins_GBR = sorted(GBR_scores, key=GBR_scores.get, reverse=True)
-    ranked_proteins_DTR_by_cor = sorted(DTR_scores, key=DTR_scores.get, reverse=True)
-    ranked_proteins_DTR_by_r2 = sorted(DTR_r2_scores, key=DTR_r2_scores.get, reverse=True)
+    root = tk.Tk()
+    root.withdraw()
 
-    # print(f'ranked_proteins_GBR:\n{ranked_proteins_GBR}')
-    # print(f'total time of GBR: {GBR_time}\n')
+    try:
+        filename = fd.askopenfilename()
+        print(filename)
+        df = pd.read_csv(filename)
 
-    print(f'ranked_proteins_DTR_by_cor:\n{ranked_proteins_DTR_by_cor}')
-    print(f'ranked_proteins_DTR_by_r2:\n{ranked_proteins_DTR_by_r2}')
-    #print(f'total time of DTR: {DTR_time}\n')
+    except:
+        print("add path to cellData.csv in the code")
+    proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31", "PD-L1",
+                     "EGFR",
+                     "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO",
+                     "CD20",
+                     "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
+                     "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
+    # find_the_best_pro(df,proteins_list)
 
-    end = time.time()
-    total_time = end - start
-
-    print(f'total time: {total_time}')
-    # V להוסיף מדד r2 score (ולהדרג לפיו) מ-sklearn
-    # לקחת 3 פציאנטים ולעשו תעליהם ממוצע
-    # להכניס לפלאגאין
-    # V ניתאי ישלח רשימה מעודכנת של חלבונים
+    # patient_number = random_int = randint(1, 42)  # random chooses patient for test
+    # #patient_number = 21  # ???
     #
+    # DTR_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient_number)
+    # print("finished ranking_model")  # ???
+    #
+    # # ranking proteins
+    # ranked_proteins_DTR_by_cor = sorted(DTR_scores, key=DTR_scores.get, reverse=True)
+    # ranked_proteins_DTR_by_r2 = sorted(DTR_r2_scores, key=DTR_r2_scores.get, reverse=True)
+    # print(f'ranked_proteins_DTR_by_cor:\n{ranked_proteins_DTR_by_cor}')
+    # print(f'ranked_proteins_DTR_by_r2:\n{ranked_proteins_DTR_by_r2}')
+
+    list_of_proteins_to_predict = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3"]  # need to complete ???
+    five_patients_prediction(df, list_of_proteins_to_predict)
+    # ???לקחת 3 פציאנטים ולעשו תעליהם ממוצע
+
+
+
+
+if __name__ == "__main__":
+    main()
