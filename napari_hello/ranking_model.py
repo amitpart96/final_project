@@ -1,34 +1,32 @@
 from collections import Counter
 from random import randint
-
-import PIL
-#import cv2
-import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import r2_score
 import tkinter as tk
 from tkinter import filedialog as fd
-from PIL import Image
-#from tifffile import imshow
 import numpy as np
 from PIL import Image
+
 
 def save_img(matrix, file_name):
     matrix = (matrix * 255).round().astype(np.uint8)
     new_im = Image.fromarray(matrix)
-    #new_im.show()
+    # new_im.show()
     image_filename = f'{file_name}.tiff'
     print(image_filename)
     # save image using extension
     new_im.save(image_filename)
 
-def ranking_model(df, patient_number,list_of_proteins_to_predict):
+
+def ranking_model(df, patient_number, list_of_proteins_to_predict):
     df = df.copy()
     DTR_cor_scores, DTR_r2_scores, DTR_predictions = Counter(), Counter(), Counter()
 
     print(f'testing patient number :{patient_number}\n')
-    df_train = df.loc[df['SampleID'] != patient_number]  # takes all patients for train, without patient patient_number for test
+    df_train = df.loc[
+        df['SampleID'] != patient_number]  # takes all patients for train, without patient patient_number for test
     df_test = df.loc[df['SampleID'] == patient_number]  # takes only patient patient_number for test
 
     proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31", "PD-L1",
@@ -38,7 +36,7 @@ def ranking_model(df, patient_number,list_of_proteins_to_predict):
                      "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
                      "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
 
-    for protein in list_of_proteins_to_predict: #need to change to top 5 list
+    for protein in list_of_proteins_to_predict:  # need to change to top 5 list
         # predict one protein , we will put it inside Y_train:
         y_train, y_test = df_train[protein], df_test[protein]
         print(f'predicting protein: {protein}')
@@ -81,6 +79,50 @@ def calculate_r2_score(y_test, prediction):
     return r2_score(y_test.to_numpy(), prediction)
 
 
+def calculate_r2_score(y_test, prediction):
+    return r2_score(y_test.to_numpy(), prediction)
+
+
+def plot_graph_r2(DTR_r2_scores):
+    # creating the dataset
+    data = DTR_r2_scores
+    proteins = list(data.keys())
+    scores = list(data.values())
+
+    fig = plt.figure(figsize=(10, 5))
+
+    # creating the bar plot
+    plt.bar(proteins, scores, color='red', width=0.4)
+    plt.xticks(rotation=90, ha='right')
+    plt.ylim(-1, 1)
+
+    plt.xlabel("Proteins")
+    plt.ylabel("r2 score")
+    plt.title("Decision Tree Regressor Scores")
+    plt.show()
+    return
+
+
+def plot_graph_cor(DTR_cor_scores):
+    # creating the dataset
+    data = DTR_cor_scores
+    proteins = list(data.keys())
+    scores = list(data.values())
+
+    fig = plt.figure(figsize=(10, 5))
+
+    # creating the bar plot
+    plt.bar(proteins, scores, color='red', width=0.4)
+    plt.xticks(rotation=90, ha='right')
+    plt.ylim(-1, 1)
+
+    plt.xlabel("Proteins")
+    plt.ylabel("Correlation score")
+    plt.title("Decision Tree Regressor Scores")
+    plt.show()
+    return
+
+
 def prediction_matrix_creation(DTR_prediction, df, patient_number, cellLabel_image):
     df = df.copy()
     protein_prediction = np.zeros((2048, 2048))
@@ -95,7 +137,7 @@ def prediction_matrix_creation(DTR_prediction, df, patient_number, cellLabel_ima
     return protein_prediction
 
 
-def real_protein_matrix_creation(df, patient, protein,cellLabel_image):
+def real_protein_matrix_creation(df, patient, protein, cellLabel_image):
     df = df.copy()
     patient_numer_df = df.loc[df['SampleID'] == patient]  # takes only the patient
     protein_cellLabel_df = patient_numer_df[['cellLabelInImage', protein]]
@@ -106,12 +148,12 @@ def real_protein_matrix_creation(df, patient, protein,cellLabel_image):
     return real_protein_matrix
 
 
-def five_patients_prediction(df,top_5_proteins):
+def five_patients_prediction(df, top_5_proteins):
     df = df.copy()
-    for patient in range(1, 6): # need to chaznge to random 5 patients ???
+    for patient in range(1, 6):  # need to chaznge to random 5 patients ???
         print(f'starting patient number: {patient}')
         flag = True
-        #get from user cellLabel image:
+        # get from user cellLabel image:
         while flag:
             try:
                 patient_labeled_cell_data = fd.askopenfilename()  # choose celldata of the patient
@@ -121,16 +163,16 @@ def five_patients_prediction(df,top_5_proteins):
             except:
                 print("incoreect path to celldata.tiff of the testing patient")
 
-        DTR_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient,top_5_proteins)
+        DTR_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient, top_5_proteins)
         for protein, protein_prediction in DTR_prediction.items():  # DTR_prediction is a dictionary
             print(f'starting protein : {protein}')
             prediction_matrix = prediction_matrix_creation(protein_prediction, df, patient, cellLabel_image)
-            #prediction matrix to image:
+            # prediction matrix to image:
             save_img(prediction_matrix, f'protein_prediction_{patient}_{protein}')
             # real protein matrix creation:
-            real_protein_matrix = real_protein_matrix_creation(df,patient,protein,cellLabel_image)
+            real_protein_matrix = real_protein_matrix_creation(df, patient, protein, cellLabel_image)
             # real matrix to image:
-            save_img(real_protein_matrix,f'real_protein_{patient}_{protein}')
+            save_img(real_protein_matrix, f'real_protein_{patient}_{protein}')
             difference_matrix = abs(np.subtract(real_protein_matrix, prediction_matrix))
             # difference_matrix to image:
             save_img(difference_matrix, f'difference_matrix_{patient}_{protein}')
@@ -140,13 +182,36 @@ def five_patients_prediction(df,top_5_proteins):
     return
 
 
+def visual_prediction(df, proteins_to_predict, patient):
+    df = df.copy()
+    print(f'starting patient number: {patient}')
+    flag = True
+    # get from user cellLabel image:
+    while flag:
+        try:
+            patient_labeled_cell_data = fd.askopenfilename()  # choose celldata of the patient
+            cellLabel_image = Image.open(patient_labeled_cell_data)
+            cellLabel_image = np.array(cellLabel_image)  # matrix of labeled cell data
+            flag = False
+        except:
+            print("incoreect path to celldata.tiff of the testing patient")
 
-def find_the_best_pro(df,protein_list):
+    DTR_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient, proteins_to_predict)
+    for protein, protein_prediction in DTR_prediction.items():  # DTR_prediction is a dictionary
+        print(f'starting protein : {protein}')
+        prediction_matrix = prediction_matrix_creation(protein_prediction, df, patient, cellLabel_image)
+        # prediction matrix to image:
+        save_img(prediction_matrix, f'protein_prediction_{patient}_{protein}')
+    print(f'finished patient number: {patient}')
+    return
+
+
+def find_the_best_pro(df, protein_list):
     df = df.copy()
     array_r2_scores = []
-    for patient in range(1, 6):
+    for patient in range(1, 16):
         print(f'starting patient number: {patient}')
-        DTR_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient,protein_list)
+        DTR_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient, protein_list)
         ranked_proteins_DTR_by_r2 = sorted(DTR_r2_scores, key=DTR_r2_scores.get, reverse=True)[:7]
         array_r2_scores.append(ranked_proteins_DTR_by_r2)
     print(f'array_r2_scores:{array_r2_scores}')
@@ -163,31 +228,25 @@ def main():
 
     except:
         print("add path to cellData.csv in the code")
-    proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31", "PD-L1",
-                     "EGFR",
-                     "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO",
-                     "CD20",
-                     "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
-                     "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
-    # find_the_best_pro(df,proteins_list)
 
-    # patient_number = random_int = randint(1, 42)  # random chooses patient for test
-    # #patient_number = 21  # ???
-    #
-    # DTR_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient_number)
-    # print("finished ranking_model")  # ???
-    #
-    # # ranking proteins
+    patient_number = random_int = randint(1, 42)  # random chooses patient for test
+    proteins_list = ["CD45", "dsDNA", "Vimentin"]
+  # proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31", "PD-L1",
+  #                    "EGFR",
+  #                    "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO",
+  #                    "CD20",
+  #                    "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
+  #                    "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
+
+    DTR_cor_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient_number, proteins_list)
+
+    plot_graph_cor(dict(DTR_cor_scores.most_common()))
+    plot_graph_r2(dict(DTR_r2_scores.most_common()))
+
     # ranked_proteins_DTR_by_cor = sorted(DTR_scores, key=DTR_scores.get, reverse=True)
     # ranked_proteins_DTR_by_r2 = sorted(DTR_r2_scores, key=DTR_r2_scores.get, reverse=True)
     # print(f'ranked_proteins_DTR_by_cor:\n{ranked_proteins_DTR_by_cor}')
     # print(f'ranked_proteins_DTR_by_r2:\n{ranked_proteins_DTR_by_r2}')
-
-    list_of_proteins_to_predict = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3"]  # need to complete ???
-    five_patients_prediction(df, list_of_proteins_to_predict)
-    # ???לקחת 3 פציאנטים ולעשו תעליהם ממוצע
-
-
 
 
 if __name__ == "__main__":

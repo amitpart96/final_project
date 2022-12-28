@@ -12,8 +12,8 @@ from magicgui import magicgui
 from enum import Enum
 from napari.utils.notifications import show_info
 from napari_hello import ranking_model
-
-
+from napari_hello import visual_prediction
+import sklearn
 class Options(Enum):
     Au = 'Au'
     B7H3 = 'B7H3'
@@ -77,6 +77,12 @@ def csv():
 def rankingg_model():
     ranking_model.main()
     show_info('ranking model')
+    return
+
+@magicgui(call_button='Visual Prediction')
+def visuall_prediction():
+    visual_prediction.main()
+    show_info('visual prediction')
     return
 
 viewer = napari.Viewer()

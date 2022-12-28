@@ -12,7 +12,11 @@ contributions:
       python_name: napari_hello:csv
     - id: napari-hello.ranking_model
       title: ranking_model
-      python_name: napari_hello:ranking_model
+      python_name: napari_hello:rankingg_model
+    - id: napari-hello.visual_prediction
+      title: visual_prediction
+      python_name: napari_hello:visuall_prediction
+
   widgets:
     - command: napari-hello.say_hi  # note, same as command.id above
       display_name: Hello World
@@ -25,5 +29,8 @@ contributions:
       autogenerate: true
     - command: napari-hello.ranking_model
       display_name: ranking_model
+      autogenerate: true
+    - command: napari-hello.visual_prediction
+      display_name: visual_prediction
       autogenerate: true
 
