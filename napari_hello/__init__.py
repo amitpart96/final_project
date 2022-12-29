@@ -74,13 +74,13 @@ def csv():
     return
 
 @magicgui(call_button='Ranking model')
-def rankingg_model(viewer):
+def rankingg_model():
     ranking_model.main(viewer)
     show_info('ranking model')
     return
 
 @magicgui(call_button='find anomaly')
-def findd_anomaly(viewer):
+def findd_anomaly():
     find_anomaly.main(viewer)
     show_info('find anomaly')
     return

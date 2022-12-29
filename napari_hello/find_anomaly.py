@@ -9,6 +9,8 @@ import numpy as np
 from PIL import Image
 
 
+
+
 def find_anomaly(df, protein, patient):#todo: change name to find anomaly
     df = df.copy()
     print(f'starting patient number: {patient}')

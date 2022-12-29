@@ -1,7 +1,6 @@
 from collections import Counter
 from random import randint
 import pandas as pd
-from matplotlib import pyplot as plt
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import r2_score
 import tkinter as tk

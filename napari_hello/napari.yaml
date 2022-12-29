@@ -4,9 +4,6 @@ contributions:
     - id: napari-hello.say_hi
       title: Say hello, world!
       python_name: napari_hello:show_hello_message
-    - id: napari-hello.csv_test_func
-      title: csv_test
-      python_name: napari_hello:csv_test_func
     - id: napari-hello.csv
       title: create csv
       python_name: napari_hello:csv
@@ -20,9 +17,6 @@ contributions:
   widgets:
     - command: napari-hello.say_hi  # note, same as command.id above
       display_name: Hello World
-      autogenerate: true
-    - command: napari-hello.csv_test_func
-      display_name: csv_test
       autogenerate: true
     - command: napari-hello.csv
       display_name: csv
