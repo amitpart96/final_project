@@ -13,9 +13,9 @@ contributions:
     - id: napari-hello.ranking_model
       title: ranking_model
       python_name: napari_hello:rankingg_model
-    - id: napari-hello.visual_prediction
-      title: visual_prediction
-      python_name: napari_hello:visuall_prediction
+    - id: napari-hello.find_anomaly
+      title: find_anomaly
+      python_name: napari_hello:findd_anomaly
 
   widgets:
     - command: napari-hello.say_hi  # note, same as command.id above
@@ -30,7 +30,7 @@ contributions:
     - command: napari-hello.ranking_model
       display_name: ranking_model
       autogenerate: true
-    - command: napari-hello.visual_prediction
-      display_name: visual_prediction
+    - command: napari-hello.find_anomaly
+      display_name: find_anomaly
       autogenerate: true
 

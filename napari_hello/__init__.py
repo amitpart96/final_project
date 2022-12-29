@@ -12,7 +12,7 @@ from magicgui import magicgui
 from enum import Enum
 from napari.utils.notifications import show_info
 from napari_hello import ranking_model
-from napari_hello import visual_prediction
+from napari_hello import find_anomaly
 import sklearn
 class Options(Enum):
     Au = 'Au'
@@ -66,7 +66,7 @@ class Options(Enum):
     Ta = 'Ta'
     Vimentin = 'Vimentin'
 
-
+viewer = napari.Viewer()
 @magicgui(call_button='Create CSV')
 def csv():
     create_csv.main()
@@ -74,20 +74,21 @@ def csv():
     return
 
 @magicgui(call_button='Ranking model')
-def rankingg_model():
-    ranking_model.main()
+def rankingg_model(viewer):
+    ranking_model.main(viewer)
     show_info('ranking model')
     return
 
-@magicgui(call_button='Visual Prediction')
-def visuall_prediction():
-    visual_prediction.main()
-    show_info('visual prediction')
+@magicgui(call_button='find anomaly')
+def findd_anomaly(viewer):
+    find_anomaly.main(viewer)
+    show_info('find anomaly')
     return
 
-viewer = napari.Viewer()
+
 viewer.window.add_dock_widget(csv, area='right')
 viewer.window.add_dock_widget(rankingg_model, area='right')
+viewer.window.add_dock_widget(findd_anomaly, area='right')
 
 
 @magicgui()
@@ -100,6 +101,18 @@ def protein_selection(protein_selection: Options) -> LayerDataTuple:
 
 viewer.window.add_dock_widget(protein_selection)
 
+
+def show_hello_message():
+    show_info('Hello, world!')
+
+
+def csv():
+    create_csv.main()
+    show_info('Hello, run!')
+
+
+def csv_test_func():
+    csv_test.main()
 
 
 
@@ -117,19 +130,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-def show_hello_message():
-    show_info('Hello, world!')
-
-
-def csv():
-    create_csv.main()
-    show_info('Hello, run!')
-
-
-def csv_test_func():
-    csv_test.main()
 
 
 # def ranking_model():

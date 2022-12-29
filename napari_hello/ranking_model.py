@@ -8,7 +8,8 @@ import tkinter as tk
 from tkinter import filedialog as fd
 import numpy as np
 from PIL import Image
-
+import matplotlib.pyplot as plt
+from skimage.io import imread
 
 def save_img(matrix, file_name):
     matrix = (matrix * 255).round().astype(np.uint8)
@@ -18,7 +19,7 @@ def save_img(matrix, file_name):
     print(image_filename)
     # save image using extension
     new_im.save(image_filename)
-
+    return image_filename
 
 def ranking_model(df, patient_number, list_of_proteins_to_predict):
     df = df.copy()
@@ -100,7 +101,7 @@ def plot_graph_r2(DTR_r2_scores):
     plt.ylabel("r2 score")
     plt.title("Decision Tree Regressor Scores")
     plt.show()
-    return
+    return plt
 
 
 def plot_graph_cor(DTR_cor_scores):
@@ -120,7 +121,7 @@ def plot_graph_cor(DTR_cor_scores):
     plt.ylabel("Correlation score")
     plt.title("Decision Tree Regressor Scores")
     plt.show()
-    return
+    return fig
 
 
 def prediction_matrix_creation(DTR_prediction, df, patient_number, cellLabel_image):
@@ -217,7 +218,7 @@ def find_the_best_pro(df, protein_list):
     print(f'array_r2_scores:{array_r2_scores}')
 
 
-def main():
+def main(viewer):
     root = tk.Tk()
     root.withdraw()
 
@@ -239,10 +240,11 @@ def main():
   #                    "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
 
     DTR_cor_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient_number, proteins_list)
-
-    plot_graph_cor(dict(DTR_cor_scores.most_common()))
-    plot_graph_r2(dict(DTR_r2_scores.most_common()))
-
+    plt1 = plot_graph_cor(dict(DTR_cor_scores.most_common()))
+    plt2 = plot_graph_r2(dict(DTR_r2_scores.most_common()))
+    plt2.savefig("plot_r2.png")
+    napari_image = imread('plot_r2.png')  # Reads an image from file
+    viewer.add_image(napari_image, name='plot_r2')  # Adds the image to the viewer and give the image layer a name
     # ranked_proteins_DTR_by_cor = sorted(DTR_scores, key=DTR_scores.get, reverse=True)
     # ranked_proteins_DTR_by_r2 = sorted(DTR_r2_scores, key=DTR_r2_scores.get, reverse=True)
     # print(f'ranked_proteins_DTR_by_cor:\n{ranked_proteins_DTR_by_cor}')
