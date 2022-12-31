@@ -50,22 +50,8 @@ def find_anomaly(df, protein, patient):#todo: change name to find anomaly
     print(f'finished patient number: {patient}')
     return real_img,pred_img,diff_img
 
-def main(viewer):
-    root = tk.Tk()
-    root.withdraw()
-
-    try:
-        filename = fd.askopenfilename()
-        print(filename)
-        df = pd.read_csv(filename)
-
-    except:
-        print("add path to cellData.csv in the code")
-
-    #patient_number = random_int = randint(1, 42)  # random chooses patient for test
-    patient_number = 1
-    #list_of_proteins_to_predict = top5 = ['CD45', 'CD45RO', 'CD3', 'CD4', 'H3K27me3']
-    list_of_proteins_to_predict = top5 = ['CD45']
+def main(viewer,df,patient_number,protein):
+    list_of_proteins_to_predict=[protein]
     real_img,pred_img,diff_img=find_anomaly(df, list_of_proteins_to_predict, patient_number)
     napari_image = imread(real_img)  # Reads an image from file
     viewer.add_image(napari_image, name=real_img)  # Adds the image to the viewer and give the image layer a name

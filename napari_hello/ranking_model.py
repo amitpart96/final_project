@@ -99,7 +99,7 @@ def plot_graph_r2(DTR_r2_scores):
     plt.xlabel("Proteins")
     plt.ylabel("r2 score")
     plt.title("Decision Tree Regressor Scores")
-    plt.show()
+    #plt.show()
     return plt
 
 
@@ -119,7 +119,7 @@ def plot_graph_cor(DTR_cor_scores):
     plt.xlabel("Proteins")
     plt.ylabel("Correlation score")
     plt.title("Decision Tree Regressor Scores")
-    plt.show()
+    #plt.show()
     return fig
 
 
@@ -217,19 +217,7 @@ def find_the_best_pro(df, protein_list):
     print(f'array_r2_scores:{array_r2_scores}')
 
 
-def main(viewer):
-    root = tk.Tk()
-    root.withdraw()
-
-    try:
-        filename = fd.askopenfilename()
-        print(filename)
-        df = pd.read_csv(filename)
-
-    except:
-        print("add path to cellData.csv in the code")
-
-    patient_number = random_int = randint(1, 42)  # random chooses patient for test
+def main(viewer,df,patient_number):
     proteins_list = ["CD45", "dsDNA", "Vimentin"]
   # proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31", "PD-L1",
   #                    "EGFR",
@@ -238,12 +226,20 @@ def main(viewer):
   #                    "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
   #                    "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
 
+
     DTR_cor_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient_number, proteins_list)
-    plt1 = plot_graph_cor(dict(DTR_cor_scores.most_common()))
+
+    #r2 plot
     plt2 = plot_graph_r2(dict(DTR_r2_scores.most_common()))
-    plt2.savefig("plot_r2.png")
-    napari_image = imread('plot_r2.png')  # Reads an image from file
-    viewer.add_image(napari_image, name='plot_r2')  # Adds the image to the viewer and give the image layer a name
+    plt2.savefig("plot_r2_ranking.png")
+    napari_image1 = imread('plot_r2_ranking.png')  # Reads an image from file
+    viewer.add_image(napari_image1, name='plot_r2_ranking')  # Adds the image to the viewer and give the image layer a name
+    #cor plot:
+    plt1 = plot_graph_cor(dict(DTR_cor_scores.most_common()))
+    plt1.savefig("plot_cor_ranking.png")
+    napari_image2 = imread('plot_cor_ranking.png')  # Reads an image from file
+    viewer.add_image(napari_image2, name='plot_cor_ranking')  # Adds the image to the viewer and give the image layer a name
+
     # ranked_proteins_DTR_by_cor = sorted(DTR_scores, key=DTR_scores.get, reverse=True)
     # ranked_proteins_DTR_by_r2 = sorted(DTR_r2_scores, key=DTR_r2_scores.get, reverse=True)
     # print(f'ranked_proteins_DTR_by_cor:\n{ranked_proteins_DTR_by_cor}')
