@@ -89,10 +89,10 @@ def plot_graph_r2(DTR_r2_scores):
     proteins = list(data.keys())
     scores = list(data.values())
 
-    fig = plt.figure(figsize=(10, 5))
+    fig = plt.figure(figsize=(10, 7))
 
     # creating the bar plot
-    plt.bar(proteins, scores, color='red', width=0.4)
+    plt.bar(proteins, scores, color='blue', width=0.4)
     plt.xticks(rotation=90, ha='right')
     plt.ylim(-1, 1)
 
@@ -109,12 +109,12 @@ def plot_graph_cor(DTR_cor_scores):
     proteins = list(data.keys())
     scores = list(data.values())
 
-    fig = plt.figure(figsize=(10, 5))
+    fig = plt.figure(figsize=(10, 7))
 
     # creating the bar plot
     plt.bar(proteins, scores, color='red', width=0.4)
     plt.xticks(rotation=90, ha='right')
-    plt.ylim(-1, 1)
+    plt.ylim(0, 1)
 
     plt.xlabel("Proteins")
     plt.ylabel("Correlation score")
@@ -231,12 +231,12 @@ def main(viewer,df,patient_number):
 
     #r2 plot
     plt2 = plot_graph_r2(dict(DTR_r2_scores.most_common()))
-    plt2.savefig("plot_r2_ranking.png")
+    plt2.savefig("plot_r2_ranking.png", dpi=150)
     napari_image1 = imread('plot_r2_ranking.png')  # Reads an image from file
     viewer.add_image(napari_image1, name='plot_r2_ranking')  # Adds the image to the viewer and give the image layer a name
     #cor plot:
     plt1 = plot_graph_cor(dict(DTR_cor_scores.most_common()))
-    plt1.savefig("plot_cor_ranking.png")
+    plt1.savefig("plot_cor_ranking.png", dpi=150)
     napari_image2 = imread('plot_cor_ranking.png')  # Reads an image from file
     viewer.add_image(napari_image2, name='plot_cor_ranking')  # Adds the image to the viewer and give the image layer a name
 

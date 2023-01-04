@@ -1,5 +1,8 @@
+import time
 import tkinter as tk
 from tkinter import filedialog as fd, filedialog
+
+import PIL.Image
 import pandas as pd
 from PIL.Image import Image
 from imageio import imread
@@ -71,7 +74,7 @@ viewer = napari.Viewer()
 patient_number = None
 protein = None
 df = None
-
+segmentation = None
 
 @magicgui(call_button='Upload Csv')
 def upload_csv():
@@ -86,7 +89,18 @@ def upload_csv():
     except:
         show_info("add path to cellData.csv in the code")
     return
+@magicgui(call_button='Upload Segmentation')
+def upload_segmentation():
+    root = tk.Tk()
+    root.withdraw()
+    global segmentation
+    seg = fd.askopenfilename()  # choose segmentation image of the patient
+    # segmentation = Image.open(seg)
+    napari_image = imread(seg)  # Reads an image from file
+    viewer.add_image(napari_image, name="segmentation")  # Adds the image to the viewer and give the image layer a name
+    show_info(f'segmentation uploaded successfully')
 
+    return
 
 @magicgui(call_button='Create CSV')
 def create_CSV():
@@ -95,7 +109,7 @@ def create_CSV():
     return
 
 
-@magicgui(call_button='Ranking model')
+@magicgui(call_button='Rank Proteins')
 def rankingg_model():
     if df is None:
         show_info("upload csv first")
@@ -104,12 +118,13 @@ def rankingg_model():
         show_info("choose patient number first")
         return
     show_info("starting to rank proteins")
+    time.sleep(3)
     ranking_model.main(viewer, df, patient_number)
-    show_info('done ranking model')
+    show_info('done rank proteins')
     return
 
 
-@magicgui(call_button='find anomaly')
+@magicgui(call_button='Find Anomaly')
 def findd_anomaly():
     if df is None:
         show_info("upload csv first")
@@ -159,6 +174,7 @@ def upload_images():
 
 
 viewer.window.add_dock_widget(upload_csv, area='right')
+viewer.window.add_dock_widget(upload_segmentation, area='right')
 viewer.window.add_dock_widget(create_CSV, area='right')
 viewer.window.add_dock_widget(patient_selection, area='right')
 viewer.window.add_dock_widget(upload_images, area='right')
