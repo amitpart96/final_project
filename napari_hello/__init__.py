@@ -1,10 +1,12 @@
 import time
 import tkinter as tk
+from idlelib.tooltip import _tooltip
 from tkinter import filedialog as fd, filedialog
 
 import PIL.Image
 import pandas as pd
 from PIL.Image import Image
+from dask.array.chunk import view
 from imageio import imread
 
 import napari_hello
@@ -86,6 +88,7 @@ def upload_csv():
         print(filename)
         df = pd.read_csv(filename)
         show_info(f'csv uploaded successfully')
+        patient_selection_button.setVisible(True)
     except:
         show_info("add path to cellData.csv in the code")
     return
@@ -99,13 +102,13 @@ def upload_segmentation():
     napari_image = imread(seg)  # Reads an image from file
     viewer.add_image(napari_image, name="segmentation")  # Adds the image to the viewer and give the image layer a name
     show_info(f'segmentation uploaded successfully')
-
     return
 
 @magicgui(call_button='Create CSV')
 def create_CSV():
     create_csv.main()
     show_info('created csv successfully')
+    patient_selection_button.setVisible(True)
     return
 
 
@@ -147,6 +150,7 @@ def protein_selection(protein_selection: Options_Proteins):
     global protein
     protein = protein_selection.value
     show_info(f'{protein} is chosen')
+    find_anomaly_button.setVisible(True)
     return
 
 
@@ -156,6 +160,8 @@ def patient_selection(patient_selection: Options_Patients):
     global patient_number
     patient_number = int(patient_selection.value)
     show_info(f'patient {patient_number} is chosen')
+    ranking_model_button.setVisible(True)
+    protein_selection_button.setVisible(True)
     return
 
 @magicgui(call_button='Upload Images')
@@ -172,16 +178,20 @@ def upload_images():
     show_info(f'images uploaded successfully')
     return
 
+upload_segmentation_button = viewer.window.add_dock_widget(upload_segmentation, area='right')
+create_CSV_button = viewer.window.add_dock_widget(create_CSV, area='right')
+upload_csv_button = viewer.window.add_dock_widget(upload_csv, area='right')
+patient_selection_button = viewer.window.add_dock_widget(patient_selection, area='right')
+ranking_model_button = viewer.window.add_dock_widget(rankingg_model, area='right')
+protein_selection_button = viewer.window.add_dock_widget(protein_selection, area='right')
+find_anomaly_button = viewer.window.add_dock_widget(findd_anomaly, area='right')
+upload_images_button = viewer.window.add_dock_widget(upload_images, area='right')
 
-viewer.window.add_dock_widget(upload_csv, area='right')
-viewer.window.add_dock_widget(upload_segmentation, area='right')
-viewer.window.add_dock_widget(create_CSV, area='right')
-viewer.window.add_dock_widget(patient_selection, area='right')
-viewer.window.add_dock_widget(upload_images, area='right')
-viewer.window.add_dock_widget(rankingg_model, area='right')
-viewer.window.add_dock_widget(protein_selection, area='right')
-viewer.window.add_dock_widget(findd_anomaly, area='right')
-
+patient_selection_button.setVisible(False)
+upload_images_button.setVisible(False)
+ranking_model_button.setVisible(False)
+protein_selection_button.setVisible(False)
+find_anomaly_button.setVisible(False)
 
 def message():
     show_info('Welcome to Napari Plugin')
