@@ -1,3 +1,4 @@
+import threading
 import time
 import tkinter as tk
 from idlelib.tooltip import _tooltip
@@ -104,11 +105,21 @@ def upload_segmentation():
     show_info(f'segmentation uploaded successfully')
     return
 
+def finish_create_csv():
+    show_info('created csv successfully')
+    create_CSV_button.setVisible(True)
+    patient_selection_button.setVisible(True)
+
+def exepc_in_create_csv():
+    create_CSV_button.setVisible(True)
+
+
 @magicgui(call_button='Create CSV')
 def create_CSV():
-    create_csv.main()
-    show_info('created csv successfully')
-    patient_selection_button.setVisible(True)
+    #create_CSV_button.setVisible(False)
+    show_info("Processing CSV creation")
+    thread = threading.Thread(target=create_csv.main)
+    thread.start()
     return
 
 

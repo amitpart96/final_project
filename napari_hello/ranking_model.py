@@ -218,7 +218,7 @@ def find_the_best_pro(df, protein_list):
 
 
 def main(viewer,df,patient_number):
-    proteins_list = ["CD45", "dsDNA", "Vimentin"]
+    proteins_list = ["CD45", "dsDNA", "Vimentin","HLA-DR", "CD4", "CD3","CD45RO","CD20","CD16","H3K27me3"]
   # proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31", "PD-L1",
   #                    "EGFR",
   #                    "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO",

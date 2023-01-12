@@ -24,7 +24,7 @@ def find_anomaly(df, protein, patient):#todo: change name to find anomaly
             #cellLabel_image = Image.open('C:/Users/lidor/Downloads/Project2022/drive/TNBC_shareCellData/p1_labeledcellData.tiff')
             #from PIL import Image
             #todo: try to convert the image to list
-            cellLabel_image = np.array(cellLabel_image)
+            cellLabel_image = np.asarray(cellLabel_image)
             print("2")
             print("3")
             flag = False
