@@ -2,10 +2,8 @@ pyproject.toml
 setup.cfg
 napari_hello/__init__.py
 napari_hello/create_csv.py
-napari_hello/csv_test.py
 napari_hello/find_anomaly.py
 napari_hello/ranking_model.py
-napari_hello/run.py
 napari_hello.egg-info/PKG-INFO
 napari_hello.egg-info/SOURCES.txt
 napari_hello.egg-info/dependency_links.txt
