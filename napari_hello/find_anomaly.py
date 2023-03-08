@@ -7,8 +7,8 @@ import tkinter as tk
 from tkinter import filedialog as fd
 import numpy as np
 from PIL import Image
-
-
+import napari
+from skimage import data
 
 
 def find_anomaly(df, protein, patient):#todo: change name to find anomaly
@@ -65,13 +65,35 @@ def create_difference_matrix_std(prediction_matrix,real_protein_matrix, std_real
 def main(viewer,df,patient_number,protein):
     list_of_proteins_to_predict=[protein]
     real_img,pred_img,diff_img, diff_img_std=find_anomaly(df, list_of_proteins_to_predict, patient_number)
-    napari_image = imread(real_img)  # Reads an image from file
-    viewer.add_image(napari_image, name=real_img)  # Adds the image to the viewer and give the image layer a name
-    napari_image = imread(pred_img)  # Reads an image from file
-    viewer.add_image(napari_image, name=pred_img)  # Adds the image to the viewer and give the image layer a name
-    napari_image = imread(diff_img)  # Reads an image from file
-    viewer.add_image(napari_image, name=diff_img)  # Adds the image to the viewer and give the image layer a name
-    napari_image = imread(diff_img_std)  # Reads an image from file
-    viewer.add_image(napari_image, name=diff_img)  # Adds the image to the viewer and give the image layer a nam
+    # napari_image = imread(real_img)  # Reads an image from file
+    # viewer.add_image(napari_image, name=real_img, colormap='magma')  # Adds the image to the viewer and give the image layer a name
+    # napari_image = imread(pred_img)  # Reads an image from file
+    # viewer.add_image(napari_image, name=pred_img, colormap='red')  # Adds the image to the viewer and give the image layer a name
+    # napari_image = imread(diff_img)  # Reads an image from file
+    # viewer.add_image(napari_image, name=diff_img, colormap='turbo')  # Adds the image to the viewer and give the image layer a name
+    # napari_image = imread(diff_img_std)  # Reads an image from file
+    # viewer.add_image(napari_image, name=diff_img)  # Adds the image to the viewer and give the image layer a nam
+
+
+    # Add the real image as the first layer and set the colormap
+    napari_image = imread(real_img)
+    viewer.add_image(napari_image, name='Real Image', colormap='magma')
+
+    # Add the predicted image as the second layer and set the colormap
+    napari_image = imread(pred_img)
+    viewer.add_image(napari_image, name='Predicted Image', colormap='red')
+
+    # Add the difference image as the third layer and set the colormap
+    napari_image = imread(diff_img)
+    viewer.add_image(napari_image, name='Difference Image', colormap='turbo')
+
+    # Add the difference image with std as the fourth layer and set the colormap
+    napari_image = imread(diff_img_std)
+    viewer.add_image(napari_image, name='Difference Image with Std', colormap='gray')
+
+    # Add the labels image as the fifth layer and set the colormap
+    labels_image = imread(patient_labeled_cell_data)
+    viewer.add_labels(labels_image, name='Labels Image', colormap='viridis')
+
 if __name__ == "__main__":
     main()
