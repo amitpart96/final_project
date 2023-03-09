@@ -3,21 +3,20 @@ import time
 import tkinter as tk
 from idlelib.tooltip import _tooltip
 from tkinter import filedialog as fd, filedialog
-
 import PIL.Image
 import pandas as pd
 from PIL.Image import Image
 from dask.array.chunk import view
 from imageio import imread
 
-import napari_hello
-from napari_hello import create_csv
 import napari
 import napari_hello
 import os
 from magicgui import magicgui
 from enum import Enum
 from napari.utils.notifications import show_info
+import napari_hello
+from napari_hello import create_csv
 from napari_hello import ranking_model
 from napari_hello import find_anomaly
 
