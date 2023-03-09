@@ -78,6 +78,11 @@ patient_number = None
 protein = None
 df = None
 segmentation = None
+prediction_matrix = None
+real_protein_matrix = None
+std_real = None
+file_name_std = None
+layer_std = None
 
 @magicgui(call_button='Upload Csv')
 def upload_csv():
@@ -140,6 +145,11 @@ def rankingg_model():
 
 @magicgui(call_button='Find Anomaly')
 def findd_anomaly():
+    global prediction_matrix
+    global real_protein_matrix
+    global std_real
+    global file_name_std
+    global layer_std
     if df is None:
         show_info("upload csv first")
         return
@@ -150,7 +160,7 @@ def findd_anomaly():
         show_info("choose protein first")
         return
     show_info("starting to find anomaly")
-    find_anomaly.main(viewer, df, patient_number, protein)
+    prediction_matrix, real_protein_matrix, std_real, file_name_std, layer_std = find_anomaly.main(viewer, df, patient_number, protein)
     show_info('done find anomaly')
     return
 
@@ -188,7 +198,15 @@ def upload_images():
         viewer.add_image(napari_image, name=img_name)  # Adds the image to the viewer and give the image layer a name
     show_info(f'images uploaded successfully')
     return
-
+@magicgui(
+    call_button="change std",
+    slider_float={"widget_type": "FloatSlider", 'max': 10},
+)
+def widget_demo(slider_float=2):
+    print(slider_float)
+    find_anomaly.update_difference_matrix_std(viewer,prediction_matrix, real_protein_matrix, std_real, slider_float, file_name_std, layer_std)
+    return
+#widget_demo.show()
 upload_segmentation_button = viewer.window.add_dock_widget(upload_segmentation, area='right')
 create_CSV_button = viewer.window.add_dock_widget(create_CSV, area='right')
 upload_csv_button = viewer.window.add_dock_widget(upload_csv, area='right')
@@ -197,7 +215,7 @@ ranking_model_button = viewer.window.add_dock_widget(rankingg_model, area='right
 protein_selection_button = viewer.window.add_dock_widget(protein_selection, area='right')
 find_anomaly_button = viewer.window.add_dock_widget(findd_anomaly, area='right')
 upload_images_button = viewer.window.add_dock_widget(upload_images, area='right')
-
+viewer.window.add_dock_widget(widget_demo, area='right')
 patient_selection_button.setVisible(False)
 upload_images_button.setVisible(False)
 ranking_model_button.setVisible(False)

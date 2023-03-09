@@ -53,8 +53,9 @@ def find_anomaly(df, protein, patient):#todo: change name to find anomaly
         # difference_matrix to image:
         diff_img = ranking_model.save_img(difference_matrix, f'difference_matrix_{patient}_{protein}')
         diff_img_std = ranking_model.save_img(difference_matrix_std, f'difference_matrix_std_{patient}_{protein}')
+        file_name_std = f'difference_matrix_std_{patient}_{protein}'
     print(f'finished patient number: {patient}')
-    return real_img,pred_img,diff_img,diff_img_std
+    return real_img,pred_img,diff_img,diff_img_std, prediction_matrix, real_protein_matrix, std_real, file_name_std # ??
 
 def create_difference_matrix_std(prediction_matrix,real_protein_matrix, std_real):
     difference_matrix_std_tmp = abs(np.subtract(prediction_matrix, real_protein_matrix))
@@ -62,9 +63,19 @@ def create_difference_matrix_std(prediction_matrix,real_protein_matrix, std_real
     print((f'std matrix Type: {type(difference_matrix_std)}'))
     return difference_matrix_std
 
+def update_difference_matrix_std(viewer, prediction_matrix,real_protein_matrix, std_real, slider_float, file_name_std, layer_std):
+    difference_matrix_std_tmp = abs(np.subtract(prediction_matrix, real_protein_matrix))
+    difference_matrix_std = (difference_matrix_std_tmp >= slider_float* std_real)
+    print((f'std matrix Type: {type(difference_matrix_std)}'))
+    diff_img_std = ranking_model.save_img(difference_matrix_std, file_name_std)
+    napari_image = imread(diff_img_std)  # Reads an image from file
+    print("1-2-3")
+    #viewer.add_image(napari_image, name=diff_img_std)  # Adds the image to the viewer and give the image layer a name
+   # viewer.layers[file_name_std].data = diff_img_std #'(napari_image, name=file_name_std)  # Adds the image to the viewer and give the image layer a name
+    layer_std.data = napari_image
 def main(viewer,df,patient_number,protein):
     list_of_proteins_to_predict=[protein]
-    real_img,pred_img,diff_img, diff_img_std=find_anomaly(df, list_of_proteins_to_predict, patient_number)
+    real_img,pred_img,diff_img, diff_img_std, prediction_matrix, real_protein_matrix, std_real, file_name_std  =find_anomaly(df, list_of_proteins_to_predict, patient_number) # ??
     napari_image = imread(real_img)  # Reads an image from file
     viewer.add_image(napari_image, name=real_img)  # Adds the image to the viewer and give the image layer a name
     napari_image = imread(pred_img)  # Reads an image from file
@@ -72,6 +83,8 @@ def main(viewer,df,patient_number,protein):
     napari_image = imread(diff_img)  # Reads an image from file
     viewer.add_image(napari_image, name=diff_img)  # Adds the image to the viewer and give the image layer a name
     napari_image = imread(diff_img_std)  # Reads an image from file
-    viewer.add_image(napari_image, name=diff_img)  # Adds the image to the viewer and give the image layer a nam
+    print(type(diff_img_std))
+    layer_std = viewer.add_image(napari_image, name=diff_img_std)  # Adds the image to the viewer and give the image layer a name
+    return prediction_matrix, real_protein_matrix, std_real, file_name_std, layer_std
 if __name__ == "__main__":
     main()
