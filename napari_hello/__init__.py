@@ -20,6 +20,7 @@ from napari_hello import create_csv
 from napari_hello import ranking_model
 from napari_hello import find_anomaly
 
+
 class Options_Patients(Enum):  # todo: fill all the 41 patients
     patient1 = '1'
     patient2 = '2'
@@ -34,7 +35,7 @@ class Options_Patients(Enum):  # todo: fill all the 41 patients
 
 
 class Options_Proteins(Enum):
-    Beta_catenin ='Beta catenin'
+    Beta_catenin = 'Beta catenin'
     catenin = 'catenin'
     CD3 = 'CD3'
     CD4 = 'CD4'
@@ -83,6 +84,7 @@ std_real = None
 file_name_std = None
 layer_std = None
 
+
 @magicgui(call_button='Upload Csv')
 def upload_csv():
     root = tk.Tk()
@@ -93,10 +95,13 @@ def upload_csv():
         print(filename)
         df = pd.read_csv(filename)
         show_info(f'csv uploaded successfully')
+        ranking_model_button.setVisible(True)
         patient_selection_button.setVisible(True)
     except:
         show_info("add path to cellData.csv in the code")
     return
+
+
 @magicgui(call_button='Upload Segmentation')
 def upload_segmentation():
     root = tk.Tk()
@@ -109,10 +114,13 @@ def upload_segmentation():
     show_info(f'segmentation uploaded successfully')
     return
 
+
 def finish_create_csv():
     show_info('created csv successfully')
     create_CSV_button.setVisible(True)
+    ranking_model_button.setVisible(True)
     patient_selection_button.setVisible(True)
+
 
 def exepc_in_create_csv():
     create_CSV_button.setVisible(True)
@@ -120,7 +128,7 @@ def exepc_in_create_csv():
 
 @magicgui(call_button='Create CSV')
 def create_CSV():
-    #create_CSV_button.setVisible(False)
+    # create_CSV_button.setVisible(False)
     show_info("Processing CSV creation")
     thread = threading.Thread(target=create_csv.main)
     thread.start()
@@ -159,7 +167,9 @@ def findd_anomaly():
         show_info("choose protein first")
         return
     show_info("starting to find anomaly")
-    prediction_matrix, real_protein_matrix, std_real, file_name_std, layer_std = find_anomaly.main(viewer, df, patient_number, protein)
+    prediction_matrix, real_protein_matrix, std_real, file_name_std, layer_std = find_anomaly.main(viewer, df,
+                                                                                                   patient_number,
+                                                                                                   protein)
     show_info('done find anomaly')
     return
 
@@ -180,9 +190,23 @@ def patient_selection(patient_selection: Options_Patients):
     global patient_number
     patient_number = int(patient_selection.value)
     show_info(f'patient {patient_number} is chosen')
-    ranking_model_button.setVisible(True)
+    show_info(f'please upload patient {patient_number} proteins channels')
+    root = tk.Tk()
+    root.withdraw()
+    list_img = fd.askopenfilenames(title="select the proteins channels of the patient")
+    colors = list(napari.utils.colormaps.AVAILABLE_COLORMAPS)
+    color = 0
+    for img in list_img:
+        channel_image = imread(img)  # Reads an image from file
+        img_name = os.path.basename(img)
+        img_name = img_name.removesuffix('.tiff')  + " Patient" + str(patient_number)
+        viewer.add_image(channel_image, name=img_name, colormap=colors[color],
+                         visible=False)  # Adds the image to the viewer and give the image layer a name
+        color += 1
+    show_info(f'images uploaded successfully')
     protein_selection_button.setVisible(True)
     return
+
 
 @magicgui(call_button='Upload Images')
 def upload_images():
@@ -191,26 +215,31 @@ def upload_images():
     list_img = fd.askopenfilenames()  # choose celldata of the patient
     for img in list_img:
         napari_image = imread(img)  # Reads an image from file
-        img_name=os.path.basename(img)
+        img_name = os.path.basename(img)
         if patient_number is not None:
-            img_name="Patient" + str(patient_number) + " " + img_name
+            img_name = "Patient" + str(patient_number) + " " + img_name
         viewer.add_image(napari_image, name=img_name)  # Adds the image to the viewer and give the image layer a name
     show_info(f'images uploaded successfully')
     return
+
+
 @magicgui(
     call_button="change std",
     slider_float={"widget_type": "FloatSlider", 'max': 10},
 )
 def widget_demo(slider_float=2):
     print(slider_float)
-    find_anomaly.update_difference_matrix_std(viewer,prediction_matrix, real_protein_matrix, std_real, slider_float, file_name_std, layer_std)
+    find_anomaly.update_difference_matrix_std(viewer, prediction_matrix, real_protein_matrix, std_real, slider_float,
+                                              file_name_std, layer_std)
     return
-#widget_demo.show()
+
+
+# widget_demo.show()
 upload_segmentation_button = viewer.window.add_dock_widget(upload_segmentation, area='right')
 create_CSV_button = viewer.window.add_dock_widget(create_CSV, area='right')
 upload_csv_button = viewer.window.add_dock_widget(upload_csv, area='right')
-patient_selection_button = viewer.window.add_dock_widget(patient_selection, area='right')
 ranking_model_button = viewer.window.add_dock_widget(rankingg_model, area='right')
+patient_selection_button = viewer.window.add_dock_widget(patient_selection, area='right')
 protein_selection_button = viewer.window.add_dock_widget(protein_selection, area='right')
 find_anomaly_button = viewer.window.add_dock_widget(findd_anomaly, area='right')
 upload_images_button = viewer.window.add_dock_widget(upload_images, area='right')
@@ -220,6 +249,7 @@ upload_images_button.setVisible(False)
 ranking_model_button.setVisible(False)
 protein_selection_button.setVisible(False)
 find_anomaly_button.setVisible(False)
+
 
 def message():
     show_info('Welcome to Napari Plugin')

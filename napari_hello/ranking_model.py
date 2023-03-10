@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 from skimage.io import imread
+import time
 
 
 def save_img(matrix, file_name):
@@ -24,6 +25,43 @@ def save_img(matrix, file_name):
 
 
 def ranking_model(df, patient_number, list_of_proteins_to_predict):
+    df = df.copy()
+    DTR_cor_scores, DTR_r2_scores, DTR_predictions = Counter(), Counter(), Counter()
+
+    print(f'testing patient number :{patient_number}\n')
+    df_train = df.loc[df['SampleID'] != patient_number]  # takes all patients for train, without patient patient_number for test
+    df_test = df.loc[df['SampleID'] == patient_number]  # takes only patient patient_number for test
+
+    proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31",
+                     "PD-L1",
+                     "EGFR",
+                     "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO",
+                     "CD20",
+                     "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
+                     "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
+
+    for protein in list_of_proteins_to_predict:  # need to change to top 5 list
+        # predict one protein , we will put it inside Y_train:
+        y_train, y_test = df_train[protein], df_test[protein]
+        print(f'predicting protein: {protein}')
+        # we will put all the rest proteins inside X_train:
+        pl_copy = proteins_list.copy()
+        pl_copy.remove(protein)
+        X_train, X_test = df_train[pl_copy], df_test[pl_copy]
+
+        # DecisionTreeRegressor:
+        DTR_cor_score, DTR_r2_score, DTR_prediction = model_DecisionTreeRegressor(X_train, y_train, X_test, y_test)
+        print(f'DTR r2 score: {DTR_r2_score}')
+        print(f'DTR cor score: {DTR_cor_score[0, 1]}\n')
+        # print("DTR prediction: " + str(DTR_prediction))
+
+        DTR_cor_scores[protein] = float(DTR_cor_score[0, 1])
+        DTR_r2_scores[protein] = DTR_r2_score
+        DTR_predictions[protein] = DTR_prediction
+
+    return DTR_cor_scores, DTR_r2_scores, DTR_predictions
+
+def ranking_model_avg(df, patient_number, list_of_proteins_to_predict):
     df = df.copy()
     DTR_cor_scores, DTR_r2_scores, DTR_predictions = Counter(list()), Counter(list()), Counter(list())
     # todo: change to 5 random patients and not 2 - it's 2 for faster run
@@ -69,7 +107,6 @@ def ranking_model(df, patient_number, list_of_proteins_to_predict):
     print(f'DTR_cor_scores dict after avg: {DTR_cor_scores}')
     print(f'DTR_r2_scores dict after avg: {DTR_r2_scores}')
     return DTR_cor_scores, DTR_r2_scores, DTR_predictions
-
 
 def model_DecisionTreeRegressor(X_train, y_train, X_test, y_test):
     regressor = DecisionTreeRegressor(random_state=0).fit(X_train, y_train)
@@ -235,27 +272,28 @@ def main(viewer, df, patient_number):
     #todo: change to all of the protein list and not just 3
     proteins_list = ["CD45", "dsDNA", "Vimentin"]
     # proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31", "PD-L1",
-    #                    "EGFR",
-    #                    "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO",
-    #                    "CD20",
-    #                    "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
-    #                    "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
-
-    DTR_cor_scores, DTR_r2_scores, DTR_prediction = ranking_model(df, patient_number, proteins_list)
+    #                     "EGFR",
+    #                     "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO",
+    #                     "CD20",
+    #                     "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
+    #                     "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
+    # start = time.time()
+    DTR_cor_scores, DTR_r2_scores, DTR_prediction = ranking_model_avg(df, patient_number, proteins_list)
 
     # r2 plot
     plt2 = plot_graph_r2(dict(DTR_r2_scores.most_common()))
-    plt2.savefig("plot_r2_ranking.png", dpi=150)
+    plt2.savefig("plot_r2_ranking.png", dpi=170)
     napari_image1 = imread('plot_r2_ranking.png')  # Reads an image from file
     viewer.add_image(napari_image1,
                      name='plot_r2_ranking')  # Adds the image to the viewer and give the image layer a name
     # cor plot:
     plt1 = plot_graph_cor(dict(DTR_cor_scores.most_common()))
-    plt1.savefig("plot_cor_ranking.png", dpi=150)
+    plt1.savefig("plot_cor_ranking.png", dpi=170)
     napari_image2 = imread('plot_cor_ranking.png')  # Reads an image from file
     viewer.add_image(napari_image2,
                      name='plot_cor_ranking')  # Adds the image to the viewer and give the image layer a name
-
+    end = time.time()
+    print(end - start)
     # ranked_proteins_DTR_by_cor = sorted(DTR_scores, key=DTR_scores.get, reverse=True)
     # ranked_proteins_DTR_by_r2 = sorted(DTR_r2_scores, key=DTR_r2_scores.get, reverse=True)
     # print(f'ranked_proteins_DTR_by_cor:\n{ranked_proteins_DTR_by_cor}')

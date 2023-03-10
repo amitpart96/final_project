@@ -18,7 +18,7 @@ def find_anomaly(df, protein, patient):#todo: change name to find anomaly
     while flag:
         try:
             print("entered try")
-            patient_labeled_cell_data = fd.askopenfilename()  # choose celldata of the patient
+            patient_labeled_cell_data = fd.askopenfilename(title="select the cellData of the patient")  # choose celldata of the patient
             print("1")
             cellLabel_image = Image.open(patient_labeled_cell_data)
             #cellLabel_image = Image.open('C:/Users/lidor/Downloads/Project2022/drive/TNBC_shareCellData/p1_labeledcellData.tiff')
