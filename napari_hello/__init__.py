@@ -181,6 +181,7 @@ def protein_selection(protein_selection: Options_Proteins):
     protein = protein_selection.value
     show_info(f'{protein} is chosen')
     find_anomaly_button.setVisible(True)
+    change_std_button.setVisible(True)
     return
 
 
@@ -199,10 +200,12 @@ def patient_selection(patient_selection: Options_Patients):
     for img in list_img:
         channel_image = imread(img)  # Reads an image from file
         img_name = os.path.basename(img)
-        img_name = img_name.removesuffix('.tiff')  + " Patient" + str(patient_number)
+        img_name = img_name.removesuffix('.tiff') + " Patient" + str(patient_number)
         viewer.add_image(channel_image, name=img_name, colormap=colors[color],
                          visible=False)  # Adds the image to the viewer and give the image layer a name
         color += 1
+        if (color >= len(colors)):
+            color = 0
     show_info(f'images uploaded successfully')
     protein_selection_button.setVisible(True)
     return
@@ -243,12 +246,13 @@ patient_selection_button = viewer.window.add_dock_widget(patient_selection, area
 protein_selection_button = viewer.window.add_dock_widget(protein_selection, area='right')
 find_anomaly_button = viewer.window.add_dock_widget(findd_anomaly, area='right')
 upload_images_button = viewer.window.add_dock_widget(upload_images, area='right')
-viewer.window.add_dock_widget(widget_demo, area='right')
+change_std_button = viewer.window.add_dock_widget(widget_demo, area='right')
 patient_selection_button.setVisible(False)
 upload_images_button.setVisible(False)
 ranking_model_button.setVisible(False)
 protein_selection_button.setVisible(False)
 find_anomaly_button.setVisible(False)
+change_std_button.setVisible(False)
 
 
 def message():
