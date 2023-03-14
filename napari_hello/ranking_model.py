@@ -38,8 +38,11 @@ def predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict):
                      "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
                      "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
     # predict one protein , we will put it inside Y_train:
-    print("1")
-    y_train, y_test = df_train[list_of_proteins_to_predict], df_test[list_of_proteins_to_predict]
+    if (len(list_of_proteins_to_predict) == 1):
+        y_train, y_test = df_train[list_of_proteins_to_predict[0]], df_test[list_of_proteins_to_predict[0]]
+        print(f'y_test:y_test:{y_test}')
+    else:
+        y_train, y_test = df_train[list_of_proteins_to_predict], df_test[list_of_proteins_to_predict]
     print("2")
     print(f'y_test: {y_test}')
     print(f'y_train: {y_train}')
@@ -53,13 +56,14 @@ def predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict):
     DTR_cor_score, DTR_r2_score, DTR_prediction = model_DecisionTreeRegressor(X_train, y_train, X_test, y_test)
     print(f'DTR r2 score: {DTR_r2_score}')
     #todo: לשאול את ניתאי איך להציג את הקורלציה של יותר מחלבון אחד
-    print(f'DTR cor score: {DTR_cor_score[0, 1]}\n')
+    print(f'DTR cor score: {DTR_cor_score}\n')
+
 
     flag = True
     # get from user cellLabel image:
     while flag:
         try:
-            patient_labeled_cell_data = fd.askopenfilename()  # choose celldata of the patient
+            patient_labeled_cell_data = fd.askopenfilename(title=f'choose cellData image of the patient {patient_number}')  # choose celldata of the patient
             cellLabel_image = Image.open(patient_labeled_cell_data)
             cellLabel_image = np.array(cellLabel_image)  # matrix of labeled cell data
             flag = False
@@ -181,6 +185,8 @@ def model_DecisionTreeRegressor(X_train, y_train, X_test, y_test):
 
 
 def calculate_correlation(y_test, prediction):
+    print(f'y_test.to_numpy():{y_test.to_numpy()}')
+    print(f'prediction: {prediction}')
     return np.corrcoef(y_test.to_numpy(), prediction)
 
 
@@ -359,17 +365,18 @@ def main(viewer, df, patient_number):
 
 
 if __name__ == "__main__":
-    patient_number = 1
+    patient_number = 3
     root = tk.Tk()
     root.withdraw()
     try:
         global df
-        filename = fd.askopenfilename()
+        filename = fd.askopenfilename(title="open cellData csv")
         print(filename)
         df = pd.read_csv(filename)
     except:
         print("add path to cellData.csv in the code")
-    list_of_proteins_to_predict=["CD45", "dsDNA", "Vimentin"]
+    list_of_proteins_to_predict=['CD45']
+    list_of_proteins_to_predict=['CD45','CD4']
     predict_k_proteins(None,df, patient_number, list_of_proteins_to_predict)
     #main()
 
