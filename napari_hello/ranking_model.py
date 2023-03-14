@@ -23,6 +23,64 @@ def save_img(matrix, file_name):
     new_im.save(image_filename)
     return image_filename
 
+def predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict):
+    df = df.copy()
+
+    print(f'testing patient number :{patient_number}\n')
+    df_train = df.loc[df['SampleID'] != patient_number]  # takes all patients for train, without patient patient_number for test
+    df_test = df.loc[df['SampleID'] == patient_number]  # takes only patient patient_number for test
+
+    proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31",
+                     "PD-L1",
+                     "EGFR",
+                     "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO",
+                     "CD20",
+                     "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
+                     "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
+    # predict one protein , we will put it inside Y_train:
+    print("1")
+    y_train, y_test = df_train[list_of_proteins_to_predict], df_test[list_of_proteins_to_predict]
+    print("2")
+    print(f'y_test: {y_test}')
+    print(f'y_train: {y_train}')
+    # we will put all the rest proteins inside X_train:
+    pl_copy = proteins_list.copy()
+    for protein in list_of_proteins_to_predict:
+        pl_copy.remove(protein)
+    X_train, X_test = df_train[pl_copy], df_test[pl_copy]
+
+    # DecisionTreeRegressor:
+    DTR_cor_score, DTR_r2_score, DTR_prediction = model_DecisionTreeRegressor(X_train, y_train, X_test, y_test)
+    print(f'DTR r2 score: {DTR_r2_score}')
+    #todo: לשאול את ניתאי איך להציג את הקורלציה של יותר מחלבון אחד
+    print(f'DTR cor score: {DTR_cor_score[0, 1]}\n')
+
+    flag = True
+    # get from user cellLabel image:
+    while flag:
+        try:
+            patient_labeled_cell_data = fd.askopenfilename()  # choose celldata of the patient
+            cellLabel_image = Image.open(patient_labeled_cell_data)
+            cellLabel_image = np.array(cellLabel_image)  # matrix of labeled cell data
+            flag = False
+        except:
+            print("incoreect path to celldata.tiff of the testing patient")
+    prediction_df = pd.DataFrame(DTR_prediction, columns=list_of_proteins_to_predict)
+    for protein_name, values in prediction_df.iteritems():
+        print(f'protein: {protein_name}')
+
+        print("2")
+        protein_prediction_matrix = prediction_matrix_creation(prediction_df[protein_name], df, patient_number, cellLabel_image)
+
+        img_name= f'protein_prediction_{patient_number}_{protein_name}'
+        img = save_img(protein_prediction_matrix, img_name)
+        protein_prediction_image = imread(img)
+        #for pycharm run test, uncomment the next 2 rows:
+        # cellLabel_image = Image.open(img)
+        # print(np.asarray(cellLabel_image))
+        #comment the next row when checking in napari
+        viewer.add_image(protein_prediction_image, name=img_name)  # Adds the image to the viewer and give the image layer a name
+    return DTR_cor_score, DTR_r2_score, DTR_prediction
 
 def ranking_model(df, patient_number, list_of_proteins_to_predict):
     df = df.copy()
@@ -292,8 +350,8 @@ def main(viewer, df, patient_number):
     napari_image2 = imread('plot_cor_ranking.png')  # Reads an image from file
     viewer.add_image(napari_image2,
                      name='plot_cor_ranking')  # Adds the image to the viewer and give the image layer a name
-    end = time.time()
-    print(end - start)
+    # end = time.time()
+    # print(end - start)
     # ranked_proteins_DTR_by_cor = sorted(DTR_scores, key=DTR_scores.get, reverse=True)
     # ranked_proteins_DTR_by_r2 = sorted(DTR_r2_scores, key=DTR_r2_scores.get, reverse=True)
     # print(f'ranked_proteins_DTR_by_cor:\n{ranked_proteins_DTR_by_cor}')
@@ -301,7 +359,19 @@ def main(viewer, df, patient_number):
 
 
 if __name__ == "__main__":
-    main()
+    patient_number = 1
+    root = tk.Tk()
+    root.withdraw()
+    try:
+        global df
+        filename = fd.askopenfilename()
+        print(filename)
+        df = pd.read_csv(filename)
+    except:
+        print("add path to cellData.csv in the code")
+    list_of_proteins_to_predict=["CD45", "dsDNA", "Vimentin"]
+    predict_k_proteins(None,df, patient_number, list_of_proteins_to_predict)
+    #main()
 
 
 
