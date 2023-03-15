@@ -19,6 +19,7 @@ import napari_hello
 from napari_hello import create_csv
 from napari_hello import ranking_model
 from napari_hello import find_anomaly
+from magicgui.widgets import Select
 
 
 class Options_Patients(Enum):  # todo: fill all the 41 patients
@@ -84,17 +85,37 @@ std_real = None
 file_name_std = None
 layer_std = None
 
+@magicgui(chooseProteins=dict(widget_type='Select', choices=Options_Proteins),call_button='Predict Proteins')
+def proteins_predict(chooseProteins):
+    proteins_list = [protein.name for protein in chooseProteins]
+    print(proteins_list)
 
-@magicgui(call_button='Upload Csv')
+    if (len(proteins_list) == 0):
+        show_info("please select proteins")
+        return
+    if df is None:
+        show_info("upload csv first")
+        return
+    if patient_number is None:
+        show_info("choose patient number first")
+        return
+    show_info("starting to predict proteins")
+    list_of_proteins_to_predict = proteins_list #["CD45", "dsDNA", "Vimentin"]
+    ranking_model.predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict)
+    show_info('done predict proteins')
+    return
+# proteins_predict.show()
+
+@magicgui(call_button='Upload cellTable')
 def upload_csv():
     root = tk.Tk()
     root.withdraw()
     try:
         global df
-        filename = fd.askopenfilename()
+        filename = fd.askopenfilename(title="open cellData csv")
         print(filename)
         df = pd.read_csv(filename)
-        show_info(f'csv uploaded successfully')
+        show_info(f'cellTable uploaded successfully')
         ranking_model_button.setVisible(True)
         patient_selection_button.setVisible(True)
     except:
@@ -116,7 +137,7 @@ def upload_segmentation():
 
 
 def finish_create_csv():
-    show_info('created csv successfully')
+    show_info('created cellTable successfully')
     create_CSV_button.setVisible(True)
     ranking_model_button.setVisible(True)
     patient_selection_button.setVisible(True)
@@ -126,10 +147,10 @@ def exepc_in_create_csv():
     create_CSV_button.setVisible(True)
 
 
-@magicgui(call_button='Create CSV')
+@magicgui(call_button='Create cellTable')
 def create_CSV():
     # create_CSV_button.setVisible(False)
-    show_info("Processing CSV creation")
+    show_info("Processing cellTable creation")
     thread = threading.Thread(target=create_csv.main)
     thread.start()
     return
@@ -140,18 +161,19 @@ def rankingg_model():
     if df is None:
         show_info("upload csv first")
         return
-    if patient_number is None:
-        show_info("choose patient number first")
-        return
     show_info("starting to rank proteins")
-    time.sleep(3)
     ranking_model.main(viewer, df, patient_number)
     show_info('done rank proteins')
     return
 
 
+
 @magicgui(call_button='Find Anomaly')
-def findd_anomaly():
+def protein_selection(select_protein: Options_Proteins):
+    # Do something with image and list of selected options
+    global protein
+    protein = select_protein.value
+    show_info(f'{protein} is chosen')
     global prediction_matrix
     global real_protein_matrix
     global std_real
@@ -171,17 +193,6 @@ def findd_anomaly():
                                                                                                    patient_number,
                                                                                                    protein)
     show_info('done find anomaly')
-    return
-
-
-@magicgui(call_button='Select Protein')
-def protein_selection(protein_selection: Options_Proteins):
-    # Do something with image and list of selected options
-    global protein
-    protein = protein_selection.value
-    show_info(f'{protein} is chosen')
-    find_anomaly_button.setVisible(True)
-    change_std_button.setVisible(True)
     return
 
 
@@ -208,6 +219,8 @@ def patient_selection(patient_selection: Options_Patients):
             color = 0
     show_info(f'images uploaded successfully')
     protein_selection_button.setVisible(True)
+    k_proteins_predict_button.setVisible(True)
+    change_std_button.setVisible(True)
     return
 
 
@@ -244,14 +257,14 @@ upload_csv_button = viewer.window.add_dock_widget(upload_csv, area='right')
 ranking_model_button = viewer.window.add_dock_widget(rankingg_model, area='right')
 patient_selection_button = viewer.window.add_dock_widget(patient_selection, area='right')
 protein_selection_button = viewer.window.add_dock_widget(protein_selection, area='right')
-find_anomaly_button = viewer.window.add_dock_widget(findd_anomaly, area='right')
-upload_images_button = viewer.window.add_dock_widget(upload_images, area='right')
 change_std_button = viewer.window.add_dock_widget(widget_demo, area='right')
+k_proteins_predict_button = viewer.window.add_dock_widget(proteins_predict, area='right')
+upload_images_button = viewer.window.add_dock_widget(upload_images, area='right')
 patient_selection_button.setVisible(False)
 upload_images_button.setVisible(False)
 ranking_model_button.setVisible(False)
+k_proteins_predict_button.setVisible(False)
 protein_selection_button.setVisible(False)
-find_anomaly_button.setVisible(False)
 change_std_button.setVisible(False)
 
 
