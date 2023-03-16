@@ -25,7 +25,6 @@ def save_img(matrix, file_name):
 
 def predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict):
     df = df.copy()
-
     print(f'testing patient number :{patient_number}\n')
     df_train = df.loc[df['SampleID'] != patient_number]  # takes all patients for train, without patient patient_number for test
     df_test = df.loc[df['SampleID'] == patient_number]  # takes only patient patient_number for test
@@ -40,12 +39,8 @@ def predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict):
     # predict one protein , we will put it inside Y_train:
     if (len(list_of_proteins_to_predict) == 1):
         y_train, y_test = df_train[list_of_proteins_to_predict[0]], df_test[list_of_proteins_to_predict[0]]
-        print(f'y_test:y_test:{y_test}')
     else:
         y_train, y_test = df_train[list_of_proteins_to_predict], df_test[list_of_proteins_to_predict]
-    print("2")
-    print(f'y_test: {y_test}')
-    print(f'y_train: {y_train}')
     # we will put all the rest proteins inside X_train:
     pl_copy = proteins_list.copy()
     for protein in list_of_proteins_to_predict:
@@ -70,11 +65,10 @@ def predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict):
         except:
             print("incoreect path to celldata.tiff of the testing patient")
     prediction_df = pd.DataFrame(DTR_prediction, columns=list_of_proteins_to_predict)
-    for protein_name, values in prediction_df.iteritems():
-        print(f'protein: {protein_name}')
 
-        print("2")
+    for protein_name, values in prediction_df.iteritems():
         protein_prediction_matrix = prediction_matrix_creation(prediction_df[protein_name], df, patient_number, cellLabel_image)
+        print(f'protein_prediction_matrix:\n {protein_prediction_matrix}')
 
         img_name= f'protein_prediction_{patient_number}_{protein_name}'
         img = save_img(protein_prediction_matrix, img_name)
@@ -239,12 +233,14 @@ def plot_graph_cor(DTR_cor_scores):
 
 
 def prediction_matrix_creation(DTR_prediction, df, patient_number, cellLabel_image):
+    print(f'inside prediction_matrix_creation: DTR_prediction:\n{DTR_prediction}')
     df = df.copy()
     protein_prediction = np.zeros((2048, 2048))
 
     patient_numer_df = df.loc[df['SampleID'] == patient_number]  # takes only the test patient
     protein_cellLabel_df = patient_numer_df[['cellLabelInImage']]
-    protein_cellLabel_df["prediction"] = DTR_prediction
+    protein_cellLabel_df['prediction'] = list(DTR_prediction)
+    print(f'inside prediction_matrix_creation: protein_cellLabel_df:\n{protein_cellLabel_df}')
 
     for index, row in protein_cellLabel_df.iterrows():
         protein_prediction[cellLabel_image == int(row['cellLabelInImage'])] = float(row['prediction'])
