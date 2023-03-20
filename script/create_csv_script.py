@@ -14,6 +14,7 @@ import cProfile
 import re
 import time
 import pandas as pd
+import sys
 
 
 def append_data(labels_max, props, str):
@@ -39,9 +40,11 @@ def protein_culc(list_proteins, patient, labels_max, props, df):
     return df
 
 
-def create_csv():
-    input_file_name = input("Enter name of input file: ")
-    list_subfolders_with_paths = [f.path for f in os.scandir(input_file_name) if f.is_dir()]
+def create_csv(argv):
+    file = argv[1]
+    save_file_name = argv[2]
+    # inputFileName = input("Enter name of input file: ")
+    list_subfolders_with_paths = [f.path for f in os.scandir(file) if f.is_dir()]
     result = []
     for patient in list_subfolders_with_paths:
         list_proteins = ([f for f in os.listdir(patient) if os.path.isfile(os.path.join(patient, f))])
@@ -66,12 +69,10 @@ def create_csv():
         protein_culc(list_proteins, patient, labels_max, props, df)
         result.append(df)
     result = pd.concat(result)
-    file = filedialog.asksaveasfile(mode='w', defaultextension=".csv")
-    if result is None:
-        return "Error"
-    result.to_csv(file.name)
+    result.to_csv(save_file_name)
 
-
+    
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    create_csv()
+     create_csv(sys.argv)
+    # test()
