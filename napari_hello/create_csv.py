@@ -32,6 +32,7 @@ def append_data(labels_max, props,str):
 
 
 def protein_culc(list_proteins, patient, labels_max, props,df):
+
     for protein in list_proteins:
         protein_IMG = Image.open("{}\{}".format(patient, protein))
         print(protein)
@@ -42,9 +43,22 @@ def protein_culc(list_proteins, patient, labels_max, props,df):
             list_of_indexes = getattr(props[index], 'coords')
             col_pro.append(protein_IMG[list_of_indexes].sum())
 
+
         df[protein] = col_pro
         df.to_csv('csv.csv')
     return df
+
+def labeledcellData_matrix_create(patient):
+    labeledcellData_matrix = np.zeros((2048, 2048))
+    return labeledcellData_matrix
+
+
+def labeledcellData_matrix_update(labeledcellData_matrix, index, list_of_indexes):
+    for x,y in list_of_indexes:
+        labeledcellData_matrix[x,y] = index+1
+
+    return labeledcellData_matrix
+
 
 def write_csv(file, df):
     if df is None:
@@ -96,15 +110,30 @@ def patient():
         df.index = np.arange(1, len(df)+1)
         df['cell index'] = np.arange(1,len(df)+1)
         col_sell_size = append_data(labels_max, props,'area')
+
+
         df['cell_size'] = col_sell_size
 
+        labeledcellData_matrix = labeledcellData_matrix_create(patient)
+        for index in range(0, labels_max):
+            list_of_indexes = getattr(props[index], 'coords')
+            labeledcellData_matrix = labeledcellData_matrix_update(labeledcellData_matrix, index, list_of_indexes)
 
+        save_img(labeledcellData_matrix,"{}_{}".format(patient, "labeledcellData"))
         protein_culc(list_proteins, patient, labels_max, props,df)
         result.append(df)
     result = pd.concat(result)
     return result
 
-
+def save_img(matrix, file_name):
+    print(np.amax(matrix))
+    new_im = Image.fromarray(matrix)
+    # new_im.show()
+    image_filename = f'{file_name}.tiff'
+    print(image_filename)
+    # save image using extension
+    new_im.save(image_filename)
+    return image_filename
 
 def main():
     # get the start time

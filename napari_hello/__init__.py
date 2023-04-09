@@ -19,6 +19,7 @@ import napari_hello
 from napari_hello import create_csv
 from napari_hello import ranking_model
 from napari_hello import find_anomaly
+from napari_hello import new_experiment
 from magicgui.widgets import Select
 
 import numpy as np
@@ -75,8 +76,10 @@ class Options_Proteins(Enum):
     SMA = 'SMA'
     Vimentin = 'Vimentin'
 
-#class Options_Proteins_New_Experiment(Enum):
-    #pass
+class Options_Proteins_New_Experiment(Enum):
+    Keratin6 = 'Keratin6'
+    FoxP3 = 'FoxP3'
+    dsDNA = 'dsDNA'
 
 
 viewer = napari.Viewer()
@@ -89,7 +92,8 @@ real_protein_matrix = None
 std_real = None
 file_name_std = None
 layer_std = None
-protein_prediction_options_new_exeriment = None
+protein_prediction_options_new_exeriment = []
+list_of_proteins_to_train = []
 
 @magicgui(chooseProteins=dict(widget_type='Select', choices=Options_Proteins),call_button='Predict Proteins')
 def proteins_predict(chooseProteins):
@@ -262,6 +266,7 @@ def upload_csv_new_experiment():
     try:
         global df_new_experiment
         global protein_prediction_options_new_exeriment
+        global list_of_proteins_to_train
         filename = fd.askopenfilename(title="open cellData csv - new experiment", filetypes = (("CSV Files","*.csv"),))
         print(filename)
         df_new_experiment = pd.read_csv(filename)
@@ -279,10 +284,14 @@ def upload_csv_new_experiment():
             # normalize cellTable old experiment
             df_normalized[column] = MinMaxScaler().fit_transform(np.array(df_normalized[column]).reshape(-1, 1))
         print("1")
-        protein_prediction_options_new_exeriment = set(df_normalized.columns) - set(df_new_experiment.columns)
-        protein_prediction_options_new_exeriment = list(protein_prediction_options_new_exeriment)
+        protein_prediction_options_new_exeriment_tmp = set(df_normalized.columns) - set(df_new_experiment.columns)
+        protein_prediction_options_new_exeriment = list(protein_prediction_options_new_exeriment_tmp)
+        list_of_proteins_to_train =  np.intersect1d(df_normalized.columns, df_new_experiment_normalized.columns)
         print("2")
         print(protein_prediction_options_new_exeriment)
+        print(f'train on proteins: {list_of_proteins_to_train}')
+        #my_widget.changed.connect(update_choices)
+        proteins_predict_new_experiment_button.setVisible(True)
         show_info(f'cellTable new experiment uploaded successfully')
         #predict_new_experiment.setVisible(True)
     except:
@@ -316,23 +325,39 @@ def patient_selection_new_experiment(patient_selection_new_experiment: Options_P
     # change_std_button.setVisible(True)
     return
 
-print(protein_prediction_options_new_exeriment)
-@magicgui(choose_Proteins_New_Experiment=dict(widget_type='Select', choices=protein_prediction_options_new_exeriment),call_button='Predict Proteins New Experiment')
+@magicgui(choose_Proteins_New_Experiment=dict(widget_type='Select', choices=Options_Proteins_New_Experiment),call_button='Predict Proteins New Experiment')
 def proteins_predict_new_experiment(choose_Proteins_New_Experiment):
     proteins_list = [protein.name for protein in choose_Proteins_New_Experiment]
     print(proteins_list)
 
+    print(protein_prediction_options_new_exeriment)
+
     if (len(proteins_list) == 0):
-        show_info("please select proteins")
+        show_info("please select proteins - new Experiment")
         return
-    if df is None:
+    if df_new_experiment_normalized is None:
         show_info("upload csv first")
         return
-    if patient_number is None:
-        show_info("choose patient number first")
+    if patient_number_new_experiment is None:
+        show_info("choose patient number first (New Experiment)")
         return
    # show_info('done find anomaly')
+
+    show_info("starting to predict proteins New Experiment")
+    list_of_proteins_to_predict = proteins_list  # ["CD45", "dsDNA", "Vimentin"]
+    new_experiment.predict_k_proteins(viewer, df_normalized,df_new_experiment_normalized,patient_number_new_experiment, list_of_proteins_to_predict, list_of_proteins_to_train)
+    show_info('done predict proteins')
     return
+
+#@magicgui(choices=["Item 1", "Item 2", "Item 3"])
+#def my_widget(selected_items: ListWidget):
+   # pass
+
+#def update_choices(widget):
+   # new_choices = protein_prediction_options_new_exeriment
+  #  print(new_choices)
+   # widget.update_choices(new_choices)
+
 
 
 # widget_demo.show()
@@ -348,6 +373,7 @@ upload_images_button = viewer.window.add_dock_widget(upload_images, area='right'
 upload_csv_new_experiment_button = viewer.window.add_dock_widget(upload_csv_new_experiment, area='right')
 patient_selection_new_experiment_button = viewer.window.add_dock_widget(patient_selection_new_experiment, area='right')
 proteins_predict_new_experiment_button = viewer.window.add_dock_widget(proteins_predict_new_experiment, area='right')
+#viewer.window.add_dock_widget(my_widget, area='right')
 
 patient_selection_button.setVisible(False)
 upload_images_button.setVisible(False)
@@ -357,6 +383,7 @@ protein_selection_button.setVisible(False)
 change_std_button.setVisible(False)
 #upload_csv_new_experiment_button.setVisible(False)
 #patient_selection_new_experiment_button.setVisible(False)
+proteins_predict_new_experiment_button.setVisible(False)
 
 def message():
     show_info('Welcome to Napari Plugin')
