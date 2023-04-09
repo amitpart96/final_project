@@ -73,7 +73,7 @@ def create_csv():
 
 def patient():
 
-    # find the subfolders of the patients - each subfolder is one patient that contains his proteins and a segmantation
+    # find the subfolders of the patients - each sujbfolder is one patient that contains his proteins and a segmantation
     list_subfolders_with_paths = [f.path for f in os.scandir(root_dir) if f.is_dir()]
     print(list_subfolders_with_paths)
     result = []
