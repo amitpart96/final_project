@@ -8,7 +8,6 @@ import pandas as pd
 from PIL.Image import Image
 from dask.array.chunk import view
 from imageio import imread
-
 import napari
 import napari_hello
 import os
@@ -84,6 +83,7 @@ real_protein_matrix = None
 std_real = None
 file_name_std = None
 layer_std = None
+app = Mesmer()
 
 @magicgui(chooseProteins=dict(widget_type='Select', choices=Options_Proteins),call_button='Predict Proteins')
 def proteins_predict(chooseProteins):
