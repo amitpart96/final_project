@@ -21,20 +21,6 @@ from napari_hello import ranking_model
 from napari_hello import find_anomaly
 from magicgui.widgets import Select
 
-
-class Options_Patients(Enum):  # todo: fill all the 41 patients
-    patient1 = '1'
-    patient2 = '2'
-    patient3 = '3'
-    patient4 = '4'
-    patient5 = '5'
-    patient6 = '6'
-    patient7 = '7'
-    patient8 = '8'
-    patient9 = '9'
-    patient10 = '10'
-
-
 class Options_Proteins(Enum):
     Beta_catenin = 'Beta catenin'
     catenin = 'catenin'
@@ -85,6 +71,53 @@ std_real = None
 file_name_std = None
 layer_std = None
 
+
+
+@magicgui(call_button='Upload cellTable')
+def upload_csv():
+    root = tk.Tk()
+    root.withdraw()
+    try:
+        global df
+        filename = fd.askopenfilename(title="open cellData csv")
+        print(filename)
+        df = pd.read_csv(filename)
+        show_info(f'cellTable uploaded successfully')
+        ranking_model_button.setVisible(True)
+        patient_selection_button.setVisible(True)
+    except:
+        show_info("add path to cellData.csv in the code")
+
+    return
+
+
+@magicgui(call_button='Select Patient')
+def patient_selection(patient_selection: Options_Patients):
+    global patient_number
+    patient_number = int(patient_selection.value)
+
+    show_info(f'patient {patient_number} is chosen')
+    show_info(f'please upload patient {patient_number} proteins channels')
+    root = tk.Tk()
+    root.withdraw()
+    list_img = fd.askopenfilenames(title="select the proteins channels of the patient")
+    colors = list(napari.utils.colormaps.AVAILABLE_COLORMAPS)
+    color = 0
+    for img in list_img:
+        channel_image = imread(img)  # Reads an image from file
+        img_name = os.path.basename(img)
+        img_name = img_name.removesuffix('.tiff') + " Patient" + str(patient_number)
+        viewer.add_image(channel_image, name=img_name, colormap=colors[color],
+                         visible=False)  # Adds the image to the viewer and give the image layer a name
+        color += 1
+        if (color >= len(colors)):
+            color = 0
+    show_info(f'images uploaded successfully')
+    protein_selection_button.setVisible(True)
+    k_proteins_predict_button.setVisible(True)
+    change_std_button.setVisible(True)
+    return
+
 @magicgui(chooseProteins=dict(widget_type='Select', choices=Options_Proteins),call_button='Predict Proteins')
 def proteins_predict(chooseProteins):
     proteins_list = [protein.name for protein in chooseProteins]
@@ -105,22 +138,6 @@ def proteins_predict(chooseProteins):
     show_info('done predict proteins')
     return
 # proteins_predict.show()
-
-@magicgui(call_button='Upload cellTable')
-def upload_csv():
-    root = tk.Tk()
-    root.withdraw()
-    try:
-        global df
-        filename = fd.askopenfilename(title="open cellData csv")
-        print(filename)
-        df = pd.read_csv(filename)
-        show_info(f'cellTable uploaded successfully')
-        ranking_model_button.setVisible(True)
-        patient_selection_button.setVisible(True)
-    except:
-        show_info("add path to cellData.csv in the code")
-    return
 
 
 @magicgui(call_button='Upload Segmentation')
@@ -196,32 +213,6 @@ def protein_selection(select_protein: Options_Proteins):
     return
 
 
-@magicgui(call_button='Select Patient')
-def patient_selection(patient_selection: Options_Patients):
-    # Do something with image and list of selected options
-    global patient_number
-    patient_number = int(patient_selection.value)
-    show_info(f'patient {patient_number} is chosen')
-    show_info(f'please upload patient {patient_number} proteins channels')
-    root = tk.Tk()
-    root.withdraw()
-    list_img = fd.askopenfilenames(title="select the proteins channels of the patient")
-    colors = list(napari.utils.colormaps.AVAILABLE_COLORMAPS)
-    color = 0
-    for img in list_img:
-        channel_image = imread(img)  # Reads an image from file
-        img_name = os.path.basename(img)
-        img_name = img_name.removesuffix('.tiff') + " Patient" + str(patient_number)
-        viewer.add_image(channel_image, name=img_name, colormap=colors[color],
-                         visible=False)  # Adds the image to the viewer and give the image layer a name
-        color += 1
-        if (color >= len(colors)):
-            color = 0
-    show_info(f'images uploaded successfully')
-    protein_selection_button.setVisible(True)
-    k_proteins_predict_button.setVisible(True)
-    change_std_button.setVisible(True)
-    return
 
 
 @magicgui(call_button='Upload Images')
