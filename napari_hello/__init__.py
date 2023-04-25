@@ -3,9 +3,8 @@ import time
 import tkinter as tk
 from idlelib.tooltip import _tooltip
 from tkinter import filedialog as fd, filedialog
-import PIL.Image
 import pandas as pd
-from PIL.Image import Image
+from PIL import Image
 from dask.array.chunk import view
 from imageio import imread
 
@@ -95,6 +94,7 @@ layer_std = None
 protein_prediction_options_new_exeriment = []
 list_of_proteins_to_train = []
 model_name = None
+cellLabelImages = None
 
 
 @magicgui(chooseProteins=dict(widget_type='Select', choices=Options_Proteins), call_button='Predict Proteins')
@@ -117,14 +117,14 @@ def proteins_predict(chooseProteins):
     show_info("starting to predict proteins")
     list_of_proteins_to_predict = proteins_list_to_predict  # ["CD45", "dsDNA", "Vimentin"]
     proteins_list = get_proteins_list(df)
-    ranking_model.predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict,proteins_list,model_name)
+    ranking_model.predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict, proteins_list, model_name)
     show_info('done predict proteins')
     return
 
 
 # proteins_predict.show()
 
-@magicgui(call_button='Upload cellTable')
+@magicgui(call_button='Upload cellTable and cellLabelImages')
 def upload_csv():
     root = tk.Tk()
     root.withdraw()
@@ -134,13 +134,39 @@ def upload_csv():
         print(filename)
         df = pd.read_csv(filename)
         show_info(f'cellTable uploaded successfully')
-        choose_model_button.setVisible(True)
-        ranking_model_button.setVisible(True)
-        patient_selection_button.setVisible(True)
-        upload_csv_new_experiment_button.setVisible(True)
-        patient_selection_new_experiment_button.setVisible(True)
+
     except:
         show_info("add path to cellData.csv in the code")
+
+    root = tk.Tk()
+    root.withdraw()
+
+    global cellLabelImages
+    try:
+        # create an empty list to store the image data
+        cellLabelImages = []
+        # open the directory dialog box and allow the user to select a directory
+        dir_path = filedialog.askdirectory(title="choose cellLabelImages directory")
+
+        # loop through all the files in the selected directory
+        for filename in os.listdir(dir_path):
+            print(filename)
+            # check if the file is an image file
+            if filename.endswith(".tiff"):
+                image_path = os.path.join(dir_path, filename)
+                print(image_path)
+                # read the image data from the file and append it to the images list
+                img = Image.open(image_path)
+                cellLabelImages.append(img)
+            show_info(f'cellLabelImages uploaded successfully')
+    except:
+        show_info("add path to cellLabelImages directory")
+
+    choose_model_button.setVisible(True)
+    ranking_model_button.setVisible(True)
+    patient_selection_button.setVisible(True)
+    # upload_csv_new_experiment_button.setVisible(True)
+    # patient_selection_new_experiment_button.setVisible(True)
     return
 
 
@@ -183,16 +209,20 @@ def choose_model(model_selection: Options_Models):
     model_name = model_selection.value
     show_info(f'{model_name} model is chosen')
     return
+
+
 def get_proteins_list(df):
     column_names = df.columns.tolist()
     # Columns to remove
-    columns_to_remove = ['SampleID','cellLabelInImage', 'cellSize']  # List of column names to remove
+    columns_to_remove = ['SampleID', 'cellLabelInImage', 'cellSize']  # List of column names to remove
 
     # Remove columns from the list
     list_of_proteins_from_df = [col for col in column_names if col not in columns_to_remove]
     print(list_of_proteins_from_df)
     print(len(list_of_proteins_from_df))
     return list_of_proteins_from_df
+
+
 @magicgui(call_button='Rank Proteins')
 def rankingg_model():
     if df is None:
@@ -201,10 +231,10 @@ def rankingg_model():
     if model_name is None:
         show_info("choose model first")
         return
-    amount_of_patients= 10 #to do: change to the amount of patients
+    amount_of_patients = 10  # to do: change to the amount of patients
     show_info("starting to rank proteins")
     proteins_list = get_proteins_list(df)
-    ranking_model.main(viewer, df, model_name,proteins_list,amount_of_patients)
+    ranking_model.main(viewer, df, model_name, proteins_list, amount_of_patients)
     show_info('done rank proteins')
     return
 
@@ -233,10 +263,11 @@ def protein_selection(select_protein: Options_Proteins):
         show_info("choose model first")
         return
     show_info("starting to find anomaly")
-    proteins_list= get_proteins_list(df)
+    proteins_list = get_proteins_list(df)
     prediction_matrix, real_protein_matrix, std_real, file_name_std, layer_std = find_anomaly.main(viewer, df,
                                                                                                    patient_number,
-                                                                                                   protein,model_name,proteins_list)
+                                                                                                   protein, model_name,
+                                                                                                   proteins_list)
     show_info('done find anomaly')
     return
 
@@ -399,21 +430,55 @@ def create_seggmentation():
     return
 
 
-# @magicgui(choices=["Item 1", "Item 2", "Item 3"])
-# def my_widget(selected_items: ListWidget):
-# pass
+@magicgui(call_button='New Experiment')
+def new_exp():
+    create_segmentation_button.setVisible(True)
+    create_CSV_button.setVisible(True)
 
-# def update_choices(widget):
-# new_choices = protein_prediction_options_new_exeriment
-#  print(new_choices)
-# widget.update_choices(new_choices)
+    upload_segmentation_button.setVisible(False)
+    upload_csv_button.setVisible(False)
+    patient_selection_button.setVisible(False)
+    upload_images_button.setVisible(False)
+    choose_model_button.setVisible(False)
+    ranking_model_button.setVisible(False)
+    k_proteins_predict_button.setVisible(False)
+    protein_selection_button.setVisible(False)
+    change_std_button.setVisible(False)
+    upload_csv_new_experiment_button.setVisible(False)
 
 
-# widget_demo.show()
-upload_segmentation_button = viewer.window.add_dock_widget(upload_segmentation, area='right')
+    new_exp_button.setVisible(False)
+    old_exp_button.setVisible(True)
+    return
+
+
+@magicgui(call_button='Old Experiment')
+def old_exp():
+    upload_segmentation_button.setVisible(True)
+    upload_csv_button.setVisible(True)
+
+    create_segmentation_button.setVisible(False)
+    create_CSV_button.setVisible(False)
+    new_exp_button.setVisible(True)
+    old_exp_button.setVisible(False)
+    return
+
+@magicgui
+def my_text_box(my_text: str = "Enter text here") -> None:
+    text_box = magicgui.widgets.LineEdit(text=my_text)
+    return text_box
+
+text_box_button = viewer.window.add_dock_widget(my_text_box, area='right')
+
+#new old buttons:
+new_exp_button = viewer.window.add_dock_widget(new_exp, area='right')
+old_exp_button = viewer.window.add_dock_widget(old_exp, area='right')
+#create buttons:
 create_segmentation_button = viewer.window.add_dock_widget(create_seggmentation, area='right')
-
 create_CSV_button = viewer.window.add_dock_widget(create_CSV, area='right')
+
+#uplode buttons:
+upload_segmentation_button = viewer.window.add_dock_widget(upload_segmentation, area='right')
 upload_csv_button = viewer.window.add_dock_widget(upload_csv, area='right')
 choose_model_button = viewer.window.add_dock_widget(choose_model, area='right')
 ranking_model_button = viewer.window.add_dock_widget(rankingg_model, area='right')
@@ -423,10 +488,15 @@ change_std_button = viewer.window.add_dock_widget(widget_demo, area='right')
 k_proteins_predict_button = viewer.window.add_dock_widget(proteins_predict, area='right')
 upload_images_button = viewer.window.add_dock_widget(upload_images, area='right')
 upload_csv_new_experiment_button = viewer.window.add_dock_widget(upload_csv_new_experiment, area='right')
-patient_selection_new_experiment_button = viewer.window.add_dock_widget(patient_selection_new_experiment, area='right')
+# patient_selection_new_experiment_button = viewer.window.add_dock_widget(patient_selection_new_experiment, area='right')
 # proteins_predict_new_experiment_button = viewer.window.add_dock_widget(proteins_predict_new_experiment, area='right')
 # viewer.window.add_dock_widget(my_widget, area='right')
 
+
+create_segmentation_button.setVisible(False)
+create_CSV_button.setVisible(False)
+upload_segmentation_button.setVisible(False)
+upload_csv_button.setVisible(False)
 patient_selection_button.setVisible(False)
 upload_images_button.setVisible(False)
 choose_model_button.setVisible(False)
@@ -435,6 +505,8 @@ k_proteins_predict_button.setVisible(False)
 protein_selection_button.setVisible(False)
 change_std_button.setVisible(False)
 upload_csv_new_experiment_button.setVisible(False)
+
+
 # patient_selection_new_experiment_button.setVisible(False)
 # proteins_predict_new_experiment_button.setVisible(False)
 
