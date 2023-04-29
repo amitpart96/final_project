@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import filedialog
 import os
 
+
 def save_img(seg, file_name):
     new_im = Image.fromarray(seg)
     # new_im.show()
@@ -16,10 +17,11 @@ def save_img(seg, file_name):
     return image_filename
 
 
-def main():
+def main(root_directory_path):
     root = tk.Tk()
     root.withdraw()
-    root_dir = filedialog.askdirectory(title="Select the root folder containing all the patients folders")
+    # root_dir = filedialog.askdirectory(title="Select the root folder containing all the patients folders")
+    root_dir = root_directory_path
     print(root_dir)
 
     # find the subfolders of the patients - each sujbfolder is one patient that contains his proteins and a segmantation
@@ -46,7 +48,6 @@ def main():
                           filespath]  # get the base filename without the directory path
     print("choose membrane proteins: ", filesname_membrane)
 
-
     for patient in list_patient:
         path = root_dir + "/" + patient
         sum_nuclear = np.zeros((2048, 2048), dtype=np.uint8)
@@ -55,7 +56,6 @@ def main():
             sum_nuclear += np.asarray(Image.open(path + "/" + protein + ".tiff"))
         for protein in filesname_membrane:
             sum_membrane += np.asarray(Image.open(path + "/" + protein + ".tiff"))
-
 
         # Combined together and expand to 4D
         im = np.stack((sum_nuclear, sum_membrane), axis=-1)
@@ -69,11 +69,11 @@ def main():
         print(type(labeled_image))
         print(labeled_image.shape)
         labeled_image_reshape = labeled_image.reshape(2048, 2048)
-        #labeled_image_reshape[labeled_image_reshape > 0] = 1
+        # labeled_image_reshape[labeled_image_reshape > 0] = 1
         seg = labeled_image[0, :, :, 0]
         print(seg.shape)
         save_img(seg, path + "/SegmentationInterior")
 
 
 if __name__ == "__main__":
-    main()
+    main(root_directory_path)

@@ -9,38 +9,19 @@ import numpy as np
 from PIL import Image
 
 
-def find_anomaly(df, protein, patient, model_name,proteins_list):  # todo: change name to find anomaly
+def find_anomaly(df, protein, patient, model_name,proteins_list,patient_cellLabel_image):  # todo: change name to find anomaly
     df = df.copy()
     print(f'starting patient number: {patient}')
-    flag = True
-    while flag:
-        try:
-            print("entered try")
-            patient_labeled_cell_data = fd.askopenfilename(
-                title="select the cellData of the patient")  # choose celldata of the patient
-            print("1")
-            cellLabel_image = Image.open(patient_labeled_cell_data)
-            # cellLabel_image = Image.open('C:/Users/lidor/Downloads/Project2022/drive/TNBC_shareCellData/p1_labeledcellData.tiff')
-            # from PIL import Image
-            # todo: try to convert the image to list
-            cellLabel_image = np.asarray(cellLabel_image)
-            print("2")
-            print("3")
-            flag = False
-            print("done try")
-        except:
-            print("incoreect path to celldata.tiff of the testing patient")
-
     print("before ranking model function call")
     scores, r2_scores, prediction = ranking_model.ranking_model(df, patient, protein,proteins_list, model_name)
     print("after ranking model function call")
 
     for protein, protein_prediction in prediction.items():  # DTR_prediction is a dictionary
         print(f'starting protein : {protein}')
-        prediction_matrix = ranking_model.prediction_matrix_creation(protein_prediction, df, patient, cellLabel_image)
+        prediction_matrix = ranking_model.prediction_matrix_creation(protein_prediction, df, patient, patient_cellLabel_image)
         # prediction matrix to image:
         pred_img = ranking_model.save_img(prediction_matrix, f'protein_prediction_{patient}_{protein}')
-        real_protein_matrix = ranking_model.real_protein_matrix_creation(df, patient, protein, cellLabel_image)
+        real_protein_matrix = ranking_model.real_protein_matrix_creation(df, patient, protein, patient_cellLabel_image)
         # real matrix to image:
         real_img = ranking_model.save_img(real_protein_matrix, f'real_protein_{patient}_{protein}')
         # std of the real matrix
@@ -77,10 +58,10 @@ def update_difference_matrix_std(viewer, prediction_matrix, real_protein_matrix,
     layer_std.data = napari_image
 
 
-def main(viewer, df, patient_number, protein, model_name):
+def main(viewer, df, patient_number, protein, model_name,proteins_list,patient_cellLabel_image):
     list_of_proteins_to_predict = [protein]
     real_img, pred_img, diff_img, diff_img_std, prediction_matrix, real_protein_matrix, std_real, file_name_std = find_anomaly(
-        df, list_of_proteins_to_predict, patient_number, model_name)  # ??
+        df, list_of_proteins_to_predict, patient_number, model_name,proteins_list,patient_cellLabel_image)  # ??
     napari_image = imread(real_img)  # Reads an image from file
     viewer.add_image(napari_image, name=real_img)  # Adds the image to the viewer and give the image layer a name
     napari_image = imread(pred_img)  # Reads an image from file

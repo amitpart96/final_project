@@ -67,12 +67,12 @@ def write_csv(file, df):
 
 
 
-def create_csv():
+def create_csv(root_directory_path):
     global root_dir
     print("here0")
     root = tk.Tk()
     root.withdraw()
-    root_dir = filedialog.askdirectory()
+    root_dir = root_directory_path
     print("1")
     print(root_dir)
     print("2")
@@ -135,12 +135,12 @@ def save_img(matrix, file_name):
     new_im.save(image_filename)
     return image_filename
 
-def main():
+def main(root_directory_path):
     # get the start time
     st = time.time()
 
-    f = create_csv()
-    print(f)
+    f = create_csv(root_directory_path)
+    print(f'create_csv={f}')
     data = patient()
     write_csv(f,data)
 
@@ -156,7 +156,7 @@ def main():
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    main()
+    main(root_directory_path)
 
 
 
