@@ -7,7 +7,7 @@ import pandas as pd
 from PIL import Image
 from dask.array.chunk import view
 from imageio import imread
-3import napari
+import napari
 import napari_hello
 import os
 from magicgui import magicgui
@@ -19,6 +19,7 @@ from napari_hello import ranking_model
 from napari_hello import find_anomaly
 from napari_hello import new_experiment
 from napari_hello import predict_k_proteins
+from napari_hello import new_experiment
 # from napari_hello import segmentation
 from magicgui.widgets import Select
 import numpy as np
@@ -81,6 +82,10 @@ class Options_Models(Enum):
     DecisionTree = 'DecisionTree'
     XGBoost = 'XGBoost'
 
+class Options_Proteins_New_Experiment(Enum):
+    Keratin6 = 'Keratin6'
+    FoxP3 = 'FoxP3'
+    dsDNA = 'dsDNA'
 
 viewer = napari.Viewer()
 patient_number = None
@@ -168,8 +173,7 @@ def upload_csv():
     choose_model_button.setVisible(True)
     ranking_model_button.setVisible(True)
     patient_selection_button.setVisible(True)
-    # upload_csv_new_experiment_button.setVisible(True)
-    # patient_selection_new_experiment_button.setVisible(True)
+    upload_csv_new_experiment_button.setVisible(True)
     return
 
 
@@ -334,20 +338,6 @@ def find_path_of_patient(paths, patient_number):
 
 
 
-@magicgui(call_button='Upload Images')
-def upload_images():
-    root = tk.Tk()
-    root.withdraw()
-    list_img = fd.askopenfilenames()  # choose celldata of the patient
-    for img in list_img:
-        napari_image = imread(img)  # Reads an image from file
-        img_name = os.path.basename(img)
-        if patient_number is not None:
-            img_name = "Patient" + str(patient_number) + " " + img_name
-        viewer.add_image(napari_image, name=img_name)  # Adds the image to the viewer and give the image layer a name
-    show_info(f'images uploaded successfully')
-    return
-
 
 @magicgui(
     call_button="change std",
@@ -360,6 +350,9 @@ def widget_demo(slider_float=2):
     return
 
 
+#new
+
+
 @magicgui(call_button='Upload cellTable new experiment')
 def upload_csv_new_experiment():
     root = tk.Tk()
@@ -368,7 +361,7 @@ def upload_csv_new_experiment():
         global df_new_experiment
         global protein_prediction_options_new_exeriment
         global list_of_proteins_to_train
-        filename = fd.askopenfilename(title="open cellData csv - new experiment", filetypes=(("CSV Files", "*.csv"),))
+        filename = fd.askopenfilename(title="open cellData csv - new experiment", filetypes = (("CSV Files","*.csv"),))
         print(filename)
         df_new_experiment = pd.read_csv(filename)
         global df_new_experiment_normalized
@@ -377,30 +370,29 @@ def upload_csv_new_experiment():
         # copy the data
         df_new_experiment_normalized = df_new_experiment.copy()
         # apply normalization techniques
-        columns = [
-            'Na']  # todo - change the list of the columns to normalize - check if we want 2 separate lists for each table
+        columns = ['Na'] # todo - change the list of the columns to normalize - check if we want 2 separate lists for each table
         df_normalized = df.copy()
         for column in columns:
-            # normalize cellTable new experiment
-            df_new_experiment_normalized[column] = MinMaxScaler().fit_transform(
-                np.array(df_new_experiment_normalized[column]).reshape(-1, 1))
+            #normalize cellTable new experiment
+            df_new_experiment_normalized[column] = MinMaxScaler().fit_transform(np.array(df_new_experiment_normalized[column]).reshape(-1, 1))
             # normalize cellTable old experiment
             df_normalized[column] = MinMaxScaler().fit_transform(np.array(df_normalized[column]).reshape(-1, 1))
         print("1")
         protein_prediction_options_new_exeriment_tmp = set(df_normalized.columns) - set(df_new_experiment.columns)
         protein_prediction_options_new_exeriment = list(protein_prediction_options_new_exeriment_tmp)
-        list_of_proteins_to_train = np.intersect1d(df_normalized.columns, df_new_experiment_normalized.columns)
+        list_of_proteins_to_train =  np.intersect1d(df_normalized.columns, df_new_experiment_normalized.columns)
         print("2")
         print(protein_prediction_options_new_exeriment)
         print(f'train on proteins: {list_of_proteins_to_train}')
-        # my_widget.changed.connect(update_choices)
-        # proteins_predict_new_experiment_button.setVisible(True)
+        #my_widget.changed.connect(update_choices)
+
         show_info(f'cellTable new experiment uploaded successfully')
-        # predict_new_experiment.setVisible(True)
+
+        patient_selection_new_experiment_button.setVisible(True)
+
     except:
         show_info("add path to cellData.csv in the code")
     return
-
 
 @magicgui(call_button='Select Patient New Experiment')
 def patient_selection_new_experiment(patient_selection_new_experiment: Options_Patients):
@@ -408,53 +400,33 @@ def patient_selection_new_experiment(patient_selection_new_experiment: Options_P
     global patient_number_new_experiment
     patient_number_new_experiment = int(patient_selection_new_experiment.value)
     show_info(f'patient {patient_number_new_experiment} is chosen - new experiment')
-    # show_info(f'please upload patient {patient_number} proteins channels')
-    # root = tk.Tk()
-    # root.withdraw()
-    # list_img = fd.askopenfilenames(title="select the proteins channels of the patient")
-    # colors = list(napari.utils.colormaps.AVAILABLE_COLORMAPS)
-    # color = 0
-    # for img in list_img:
-    #   channel_image = imread(img)  # Reads an image from file
-    #   img_name = os.path.basename(img)
-    #   img_name = img_name.removesuffix('.tiff') + " Patient" + str(patient_number)
-    #   viewer.add_image(channel_image, name=img_name, colormap=colors[color],
-    #                   visible=False)  # Adds the image to the viewer and give the image layer a name
-    #  color += 1
-    #  if (color >= len(colors)):
-    #      color = 0
-    # show_info(f'images uploaded successfully')
-    # protein_selection_button.setVisible(True)
-    # k_proteins_predict_button.setVisible(True)
-    # change_std_button.setVisible(True)
+    proteins_predict_new_experiment_button.setVisible(True)
     return
 
+@magicgui(choose_Proteins_New_Experiment=dict(widget_type='Select', choices=Options_Proteins_New_Experiment),call_button='Predict Proteins New Experiment')
+def proteins_predict_new_experiment(choose_Proteins_New_Experiment):
+    proteins_list = [protein.name for protein in choose_Proteins_New_Experiment]
+    print(proteins_list)
 
-#
-# @magicgui(choose_Proteins_New_Experiment=dict(widget_type='Select', choices=Options_Proteins_New_Experiment),call_button='Predict Proteins New Experiment')
-# def proteins_predict_new_experiment(choose_Proteins_New_Experiment):
-#     proteins_list = [protein.name for protein in choose_Proteins_New_Experiment]
-#     print(proteins_list)
-#
-#     print(protein_prediction_options_new_exeriment)
-#
-#     if (len(proteins_list) == 0):
-#         show_info("please select proteins - new Experiment")
-#         return
-#     if df_new_experiment_normalized is None:
-#         show_info("upload csv first")
-#         return
-#     if patient_number_new_experiment is None:
-#         show_info("choose patient number first (New Experiment)")
-#         return
-#    # show_info('done find anomaly')
-#
-#     show_info("starting to predict proteins New Experiment")
-#     list_of_proteins_to_predict = proteins_list  # ["CD45", "dsDNA", "Vimentin"]
-#     new_experiment.predict_k_proteins(viewer, df_normalized,df_new_experiment_normalized,patient_number_new_experiment, list_of_proteins_to_predict, list_of_proteins_to_train)
-#     show_info('done predict proteins')
-#     return
-#
+    print(protein_prediction_options_new_exeriment)
+
+    if (len(proteins_list) == 0):
+        show_info("please select proteins - new Experiment")
+        return
+    if df_new_experiment_normalized is None:
+        show_info("upload csv first")
+        return
+    if patient_number_new_experiment is None:
+        show_info("choose patient number first (New Experiment)")
+        return
+   # show_info('done find anomaly')
+
+    show_info("starting to predict proteins New Experiment")
+    list_of_proteins_to_predict = proteins_list  # ["CD45", "dsDNA", "Vimentin"]
+    new_experiment.predict_k_proteins(viewer, df_normalized,df_new_experiment_normalized,patient_number_new_experiment, list_of_proteins_to_predict, list_of_proteins_to_train)
+    show_info('done predict proteins')
+    return
+# end new
 
 
 @magicgui(call_button='Create Segmentation')
@@ -542,11 +514,11 @@ patient_selection_button = viewer.window.add_dock_widget(patient_selection, area
 protein_selection_button = viewer.window.add_dock_widget(protein_selection, area='right')
 change_std_button = viewer.window.add_dock_widget(widget_demo, area='right')
 k_proteins_predict_button = viewer.window.add_dock_widget(proteins_predict, area='right')
-upload_images_button = viewer.window.add_dock_widget(upload_images, area='right')
+
+
 upload_csv_new_experiment_button = viewer.window.add_dock_widget(upload_csv_new_experiment, area='right')
-# patient_selection_new_experiment_button = viewer.window.add_dock_widget(patient_selection_new_experiment, area='right')
-# proteins_predict_new_experiment_button = viewer.window.add_dock_widget(proteins_predict_new_experiment, area='right')
-# viewer.window.add_dock_widget(my_widget, area='right')
+patient_selection_new_experiment_button = viewer.window.add_dock_widget(patient_selection_new_experiment, area='right')
+proteins_predict_new_experiment_button = viewer.window.add_dock_widget(proteins_predict_new_experiment, area='right')
 
 new_exp_button.setVisible(False)
 old_exp_button.setVisible(False)
@@ -555,17 +527,16 @@ create_CSV_button.setVisible(False)
 upload_segmentation_button.setVisible(False)
 upload_csv_button.setVisible(False)
 patient_selection_button.setVisible(False)
-upload_images_button.setVisible(False)
 choose_model_button.setVisible(False)
 ranking_model_button.setVisible(False)
 k_proteins_predict_button.setVisible(False)
 protein_selection_button.setVisible(False)
 change_std_button.setVisible(False)
-upload_csv_new_experiment_button.setVisible(False)
 
-
-# patient_selection_new_experiment_button.setVisible(False)
-# proteins_predict_new_experiment_button.setVisible(False)
+#TO DO: change to set visble False
+upload_csv_new_experiment_button.setVisible(True)
+patient_selection_new_experiment_button.setVisible(True)
+proteins_predict_new_experiment_button.setVisible(True)
 
 
 def message():

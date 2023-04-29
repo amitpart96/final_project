@@ -1,5 +1,9 @@
 from sklearn.tree import DecisionTreeRegressor
-
+import pandas as pd
+from tkinter import filedialog as fd
+import numpy as np
+from PIL import Image
+from skimage.io import imread
 
 def predict_k_proteins(viewer, df_normalized,df_new_experiment_normalized,patient_number_new_experiment, list_of_proteins_to_predict, list_of_proteins_to_train):
     df_normalized = df_normalized.copy()
@@ -38,26 +42,28 @@ def predict_k_proteins(viewer, df_normalized,df_new_experiment_normalized,patien
     #with open(..., 'w', newline='') as myfile:
       #  wr = csv.writer(myfile, quoting=csv.QUOTE_ALL)
        # wr.writerow(mylist)
-    return DTR_prediction
+    #return DTR_prediction
 
-'''
+
     flag = True
     # get from user cellLabel image:
-    while flag:
-        try:
-            patient_labeled_cell_data = fd.askopenfilename(title=f'choose cellData image of the patient {patient_number}')  # choose celldata of the patient
-            cellLabel_image = Image.open(patient_labeled_cell_data)
-            cellLabel_image = np.array(cellLabel_image)  # matrix of labeled cell data
-            flag = False
-        except:
-            print("incoreect path to celldata.tiff of the testing patient")
+    #while flag:
+    try:
+        #print(patient_number_new_experiment)
+        patient_labeled_cell_data = fd.askopenfilename(title=f'choose cellData image of the patient') # {patient_number_new_experiment}')  # choose celldata of the patient
+        cellLabel_image = Image.open(patient_labeled_cell_data)
+        cellLabel_image = np.array(cellLabel_image)  # matrix of labeled cell data
+        flag = False
+    except:
+        print("incoreect path to celldata.tiff of the testing patient")
+
     prediction_df = pd.DataFrame(DTR_prediction, columns=list_of_proteins_to_predict)
 
     for protein_name, values in prediction_df.iteritems():
-        protein_prediction_matrix = prediction_matrix_creation(prediction_df[protein_name], df, patient_number, cellLabel_image)
+        protein_prediction_matrix = prediction_matrix_creation(prediction_df[protein_name], df_new_experiment_normalized, patient_number_new_experiment, cellLabel_image)
         print(f'protein_prediction_matrix:\n {protein_prediction_matrix}')
 
-        img_name= f'protein_prediction_{patient_number}_{protein_name}'
+        img_name= f'protein_prediction_{patient_number_new_experiment}_{protein_name}'
         img = save_img(protein_prediction_matrix, img_name)
         protein_prediction_image = imread(img)
         #for pycharm run test, uncomment the next 2 rows:
@@ -65,10 +71,10 @@ def predict_k_proteins(viewer, df_normalized,df_new_experiment_normalized,patien
         # print(np.asarray(cellLabel_image))
         #comment the next row when checking in napari
         viewer.add_image(protein_prediction_image, name=img_name)  # Adds the image to the viewer and give the image layer a name
-    return DTR_cor_score, DTR_r2_score, DTR_prediction
+    return DTR_prediction
 
 
-'''
+
 
 
 
@@ -84,3 +90,28 @@ def model_DecisionTreeRegressor(X_train, y_train, X_test):
       #  cor = calculate_correlation(y_test, prediction)
    # r2 = calculate_r2_score(y_test, prediction)
     return prediction
+
+def prediction_matrix_creation(DTR_prediction, df, patient_number, cellLabel_image):
+    print(f'inside prediction_matrix_creation: DTR_prediction:\n{DTR_prediction}')
+    df = df.copy()
+    protein_prediction = np.zeros((1024, 1024))
+
+    patient_numer_df = df.loc[df['SampleID'] == patient_number]  # takes only the test patient
+    protein_cellLabel_df = patient_numer_df[['cellLabelInImage']]
+    protein_cellLabel_df['prediction'] = list(DTR_prediction)
+    print(f'inside prediction_matrix_creation: protein_cellLabel_df:\n{protein_cellLabel_df}')
+
+    for index, row in protein_cellLabel_df.iterrows():
+        protein_prediction[cellLabel_image == int(row['cellLabelInImage'])] = float(row['prediction'])
+
+    return protein_prediction
+
+def save_img(matrix, file_name):
+    matrix = (matrix * 255).round().astype(np.uint8)
+    new_im = Image.fromarray(matrix)
+    # new_im.show()
+    image_filename = f'{file_name}.tiff'
+    print(image_filename)
+    # save image using extension
+    new_im.save(image_filename)
+    return image_filename

@@ -32,20 +32,25 @@ def append_data(labels_max, props,str):
 
 
 def protein_culc(list_proteins, patient, labels_max, props,df):
-
     for protein in list_proteins:
         protein_IMG = Image.open("{}\{}".format(patient, protein))
-        print(protein)
+        print(protein.split(".")[0])
         # convert img to np array
         protein_IMG = np.array(protein_IMG)
         col_pro = []
         for index in range(0, labels_max):
             list_of_indexes = getattr(props[index], 'coords')
-            col_pro.append(protein_IMG[list_of_indexes].sum())
+            cell_size = getattr(props[index], 'area')
+           # print(protein_IMG[list_of_indexes].sum())
+            #print(cell_size)
+            x = protein_IMG[list_of_indexes].sum()/cell_size * 100
+            #print(x)
 
+            #col_pro.append(protein_IMG[list_of_indexes].sum())
+            col_pro.append(math.log(x + math.sqrt(1+math.pow(x,2))))
 
-        df[protein] = col_pro
-        df.to_csv('csv.csv')
+        df[protein.split(".")[0]] = col_pro
+        df.to_csv('csv.csv', index = False)
     return df
 
 def labeledcellData_matrix_create(patient):
@@ -62,8 +67,8 @@ def labeledcellData_matrix_update(labeledcellData_matrix, index, list_of_indexes
 
 def write_csv(file, df):
     if df is None:
-        return ("Erorr")
-    df.to_csv(file.name)
+        return ("Error")
+    df.to_csv(file.name, index = False)
 
 
 
@@ -88,7 +93,7 @@ def create_csv(root_directory_path):
 def patient():
 
     # find the subfolders of the patients - each sujbfolder is one patient that contains his proteins and a segmantation
-    list_subfolders_with_paths = [f.path for f in os.scandir(root_dir) if f.is_dir()]
+    list_subfolders_with_paths = [(f.path,f.name) for f in os.scandir(root_dir) if f.is_dir()]
     print(list_subfolders_with_paths)
     result = []
 
@@ -96,36 +101,37 @@ def patient():
         df = pd.DataFrame()
         print(patient)
 
-        list_proteins = ([f for f in os.listdir(patient) if os.path.isfile(os.path.join(patient, f))])
+        list_proteins = ([f for f in os.listdir(patient[0]) if os.path.isfile(os.path.join(patient[0], f))])
         # filter the images of the proteins so that they will not contain the segmentation
-        delete_seg(patient, list_proteins)
+        delete_seg(patient[0], list_proteins)
 
-        image = Image.open(patient + '\SegmentationInterior.tiff')
+        image = Image.open(patient[0] + '\SegmentationInterior.tiff')
         image = np.array(image)
         labels = measure.label(image, connectivity=2)
         props = measure.regionprops(labels)
         labels_max = labels.max()
 
-        df['patient Number'] = pd.Series([patient for x in range(labels_max)])
+        df['SampleID'] = pd.Series([patient[1] for x in range(labels_max)])
         df.index = np.arange(1, len(df)+1)
-        df['cell index'] = np.arange(1,len(df)+1)
+        df['cellLabelInImage'] = np.arange(1,len(df)+1)
         col_sell_size = append_data(labels_max, props,'area')
 
 
-        df['cell_size'] = col_sell_size
+        df['cellSize'] = col_sell_size
 
-        labeledcellData_matrix = labeledcellData_matrix_create(patient)
+        labeledcellData_matrix = labeledcellData_matrix_create(patient[0])
         for index in range(0, labels_max):
             list_of_indexes = getattr(props[index], 'coords')
             labeledcellData_matrix = labeledcellData_matrix_update(labeledcellData_matrix, index, list_of_indexes)
 
-        save_img(labeledcellData_matrix,"{}_{}".format(patient, "labeledcellData"))
-        protein_culc(list_proteins, patient, labels_max, props,df)
+        save_img(labeledcellData_matrix,"{}_{}".format(patient[0], "labeledcellData"))
+        protein_culc(list_proteins, patient[0], labels_max, props,df)
         result.append(df)
     result = pd.concat(result)
     return result
 
 def save_img(matrix, file_name):
+    matrix = matrix.astype(np.uint16)
     print(np.amax(matrix))
     new_im = Image.fromarray(matrix)
     # new_im.show()
@@ -140,7 +146,7 @@ def main(root_directory_path):
     st = time.time()
 
     f = create_csv(root_directory_path)
-    print(f'create_csv={f}')
+    print(f)
     data = patient()
     write_csv(f,data)
 
@@ -152,6 +158,7 @@ def main(root_directory_path):
     print('Execution time:', elapsed_time, 'seconds')
     final_res = elapsed_time / 60
     print('Execution time:', final_res, 'minutes')
+
 
 
 # Press the green button in the gutter to run the script.
