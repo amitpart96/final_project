@@ -142,28 +142,20 @@ def save_img(matrix, file_name):
     return image_filename
 
 def main(root_directory_path):
-    # get the start time
-    st = time.time()
 
     f = create_csv(root_directory_path)
     print(f)
     data = patient()
     write_csv(f,data)
 
-    # get the end time
-    et = time.time()
 
-    # get the execution time
-    elapsed_time = et - st
-    print('Execution time:', elapsed_time, 'seconds')
-    final_res = elapsed_time / 60
-    print('Execution time:', final_res, 'minutes')
+
 
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    main(root_directory_path)
+    main(sys.argv)
 
 
 
