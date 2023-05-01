@@ -25,9 +25,6 @@ def save_img(matrix, file_name):
     return image_filename
 
 
-
-
-
 def ranking_model(df, patient_number, list_of_proteins_to_predict, proteins_list, model_name):
     df = df.copy()
     DTR_cor_scores, DTR_r2_scores, DTR_predictions = Counter(), Counter(), Counter()
@@ -65,8 +62,8 @@ def ranking_model_avg(df, list_of_proteins_to_predict, proteins_list, model_name
     print(model_name)
     df = df.copy()
     cor_scores, r2_scores, predictions = Counter(list()), Counter(list()), Counter(list())
-    # todo: change to 5 random patients
-    random_patients = random.sample(range(1, amount_of_patients), 1)
+    random_patients = random.sample(range(1, amount_of_patients + 1), min(5, amount_of_patients))
+
     for patient_number in random_patients:
         print(f'testing patient number :{patient_number}\n')
         df_train = df.loc[
