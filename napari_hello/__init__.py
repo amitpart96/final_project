@@ -237,8 +237,8 @@ def rankingg_model():
     if model_name is None:
         show_info("choose model first")
         return
-
-    amount_of_patients = 10  # to do: change to the amount of patients
+    dir_contents = os.listdir(root_directory_path)
+    amount_of_patients = len(dir_contents)
     show_info("starting to rank proteins")
     proteins_list = get_proteins_list(df)
     ranking_model.main(viewer, df, model_name, proteins_list, amount_of_patients)
@@ -482,7 +482,6 @@ def upload_exp():
         show_info(f'root experiment directory chosen successfully')
     except:
         show_info("add path to root experiment directory")
-
     upload_exp_button.setVisible(False)
     new_exp_button.setVisible(True)
     old_exp_button.setVisible(True)
