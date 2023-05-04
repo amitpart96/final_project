@@ -11,6 +11,7 @@ import napari
 import napari_hello
 import os
 from magicgui import magicgui
+from magicgui import magic_factory
 from enum import Enum
 from napari.utils.notifications import show_info
 import napari_hello
@@ -25,6 +26,8 @@ from magicgui.widgets import Select
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import re
+from napari.utils.notifications import show_warning
+from pathlib import Path
 
 class Options_Patients(Enum):  # todo: fill all the 41 patients
     patient1 = '1'
@@ -445,7 +448,7 @@ def new_exp():
     upload_segmentation_button.setVisible(False)
     upload_csv_button.setVisible(False)
     patient_selection_button.setVisible(False)
-    upload_images_button.setVisible(False)
+    #upload_images_button.setVisible(False)
     choose_model_button.setVisible(False)
     ranking_model_button.setVisible(False)
     k_proteins_predict_button.setVisible(False)
@@ -494,6 +497,171 @@ def my_text_box(my_text: str = "Enter text here") -> None:
     return text_box
 
 
+DEFAULT_CHOICES = []
+DEFAULT_CHOICES_find_anomaly = []
+DEFAULT_CHOICES_PATIENT = []
+
+
+def _update_choices_on_file_change(widget):
+    """Return available choices of proteins from csv headers"""
+    filename = widget.filename.value
+    choices = None
+    choices_patient = None
+    choices_find_anomaly = None
+    global df_new_experiment
+    widget.dropdown.choices = choices = ()
+    widget.dropdown_patient.choices = ()
+    widget.dropdown_find_anomaly.choices = ()
+    if filename.is_file():
+        if filename.suffix == ".csv":
+            df_new_experiment = pd.read_csv(filename)
+            choices = sorted(set(df.columns) - set(df_new_experiment.columns))
+            choices_patient = df_new_experiment["SampleID"].drop_duplicates()
+            choices_find_anomaly = np.setdiff1d(np.intersect1d(df.columns, df_new_experiment.columns),np.array(['SampleID', 'cellLabelInImage', 'cellSize']))
+            print(choices_patient)
+            print(choices)
+            print(choices_find_anomaly)
+        else:
+            show_warning(f"File {filename} is not a .csv file.")
+    if choices is not None:
+        widget.dropdown.choices = choices
+    if choices_patient is not None:
+        print(type(widget.dropdown_patient.choices))
+        print(widget.dropdown_patient.choices)
+        widget.dropdown_patient.choices = choices_patient
+        print(tuple(sorted(widget.dropdown_patient.choices)))
+        widget.dropdown_patient.choices = tuple(sorted(widget.dropdown_patient.choices))
+        print(widget.dropdown_patient.choices)
+    if choices_find_anomaly is not None:
+        widget.dropdown_find_anomaly.choices = choices_find_anomaly
+
+def proteins_predict1():
+    @magicgui(
+        filename={
+            "label": "CSV file with proteins to predict",
+            "mode": "r",
+            "filter": "*.csv",
+        },
+        foldername={
+            "label": "folder with cellLabeled Images of the patients",
+            "mode": "d",
+        },
+        dropdown_patient=dict(
+            widget_type="ComboBox", choices=DEFAULT_CHOICES_PATIENT, label="Patient to predict",
+        ),
+        dropdown=dict(
+            widget_type="Select", choices=DEFAULT_CHOICES, label="Proteins to predict",
+        ),
+        dropdown_find_anomaly=dict(
+            widget_type="ComboBox", choices=DEFAULT_CHOICES_find_anomaly, label="Proteins to predict- Find anomaly",
+        ),
+        other_button=dict(widget_type="PushButton", text="Find Anomaly"),
+        call_button="Predict Proteins",
+        
+    )
+
+    def widget(viewer: napari.Viewer, dropdown_patient, dropdown,dropdown_find_anomaly,other_button, filename=Path.home(), foldername=Path.home()):
+    #def widget(dropdown, dropdown_patient, filename=Path.home()):
+        # Perform the prediction here
+        proteins_list_to_predict = dropdown
+        patient_number = dropdown_patient
+        print(proteins_list_to_predict)
+        print(patient_number)
+        patient_number_new_experiment = patient_number
+        #proteins_list = [protein.name for protein in choose_Proteins_New_Experiment]
+
+        #print(protein_prediction_options_new_exeriment)
+        list_of_proteins_to_train = np.setdiff1d(np.intersect1d(df.columns, df_new_experiment.columns),np.array(['SampleID', 'cellLabelInImage', 'cellSize']))
+        # if (len(proteins_list) == 0):
+        #     show_info("please select proteins - new Experiment")
+        #     return
+        # if df_new_experiment_normalized is None:
+        #     show_info("upload csv first")
+        #     return
+        # if patient_number_new_experiment is None:
+        #     show_info("choose patient number first (New Experiment)")
+        #     return
+   # show_info('done find anomaly')
+        print(foldername)
+        # loop through all the files in the selected directory
+
+        image_paths = []
+        for filename in os.listdir(foldername):
+            # check if the file is an image file
+            if filename.endswith(".tiff") | filename.endswith(".tif"):
+                image_path = os.path.join(foldername, filename)
+                image_paths.append(image_path)
+        print("before find patient_cellLabel_image")
+        print(image_paths)
+        print(patient_number_new_experiment)
+        patient_cellLabel_image = find_cell_labeled_image(image_paths, patient_number_new_experiment)
+
+
+
+        show_info("starting to predict proteins New Experiment")
+        list_of_proteins_to_predict = proteins_list_to_predict  # ["CD45", "dsDNA", "Vimentin"]
+        print(patient_number_new_experiment)
+        print(proteins_list_to_predict)
+        print(list_of_proteins_to_train)
+        new_experiment.predict_k_proteins(viewer, df,df_new_experiment,patient_number_new_experiment, proteins_list_to_predict, list_of_proteins_to_train, patient_cellLabel_image)
+        show_info('done predict proteins')
+
+
+
+    @widget.filename.changed.connect
+    def update_choices_on_file_change(event=None):
+        _update_choices_on_file_change(widget)
+
+    @widget.other_button.clicked.connect
+    def do_something_with_other_button():
+        # Perform other run button function here
+        print("Clicked the other button")
+        print(widget.dropdown_find_anomaly.value)
+
+        patient_number_new_experiment = widget.dropdown_patient.value
+        protein_to_predict = widget.dropdown_find_anomaly.value
+        print(protein_to_predict)
+        print(patient_number_new_experiment)
+
+        list_of_proteins_to_train = np.setdiff1d(np.intersect1d(df.columns, df_new_experiment.columns),['SampleID', 'cellLabelInImage', 'cellSize', protein_to_predict])
+        print(list_of_proteins_to_train)
+        new_experiment.find_anomaly(viewer, df, df_new_experiment, patient_number_new_experiment,
+                                          protein_to_predict, list_of_proteins_to_train, patient_cellLabel_image)
+
+
+    return widget
+
+
+def find_cell_labeled_image(paths, patient_number):
+    for path in paths:
+        file_name = os.path.basename(path)
+        print(file_name)
+
+        match_1 = re.search(r"p(\d+)_labeledcellData\.tiff", file_name)
+        match_2 = re.search(r"p(\d+)_labeledcellData\.tif", file_name)
+        if match_1:
+            img_number_1 = int(match_1.group(1))
+            if img_number_1 == patient_number:
+                print(patient_number)
+                img = Image.open(path)
+                array_img = np.asarray(img)
+                return array_img
+        if match_2:
+            img_number_2 = int(match_2.group(1))
+            if img_number_2 == patient_number:
+                print(patient_number)
+                img = Image.open(path)
+                array_img = np.asarray(img)
+                return array_img
+    return None
+
+
+
+
+
+
+
+
 text_box_button = viewer.window.add_dock_widget(my_text_box, area='right')
 
 # upload, new, old experiment buttons:
@@ -518,6 +686,7 @@ k_proteins_predict_button = viewer.window.add_dock_widget(proteins_predict, area
 upload_csv_new_experiment_button = viewer.window.add_dock_widget(upload_csv_new_experiment, area='right')
 patient_selection_new_experiment_button = viewer.window.add_dock_widget(patient_selection_new_experiment, area='right')
 proteins_predict_new_experiment_button = viewer.window.add_dock_widget(proteins_predict_new_experiment, area='right')
+viewer.window.add_dock_widget(proteins_predict1(), name="Predict proteins new experiment",area='right' )
 
 new_exp_button.setVisible(False)
 old_exp_button.setVisible(False)
@@ -536,7 +705,6 @@ change_std_button.setVisible(False)
 upload_csv_new_experiment_button.setVisible(True)
 patient_selection_new_experiment_button.setVisible(True)
 proteins_predict_new_experiment_button.setVisible(True)
-
 
 def message():
     show_info('Welcome to Napari Plugin')

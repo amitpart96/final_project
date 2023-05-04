@@ -18,7 +18,7 @@ import time
 import pandas as pd
 def delete_seg(patient, list_proteins):
     for f in os.listdir(patient):
-        if os.path.isfile(os.path.join(patient, f)) and f.endswith(".tiff"):
+        if os.path.isfile(os.path.join(patient, f)):
             if "Segmentation" in f:
                 print(f)
                 list_proteins.remove(f)
@@ -54,7 +54,7 @@ def protein_culc(list_proteins, patient, labels_max, props,df):
     return df
 
 def labeledcellData_matrix_create(patient):
-    labeledcellData_matrix = np.zeros((2048, 2048))
+    labeledcellData_matrix = np.ones((2048, 2048))
     return labeledcellData_matrix
 
 
@@ -113,7 +113,7 @@ def patient():
 
         df['SampleID'] = pd.Series([patient[1] for x in range(labels_max)])
         df.index = np.arange(1, len(df)+1)
-        df['cellLabelInImage'] = np.arange(1,len(df)+1)
+        df['cellLabelInImage'] = np.arange(2,len(df)+2)
         col_sell_size = append_data(labels_max, props,'area')
 
 
@@ -124,7 +124,7 @@ def patient():
             list_of_indexes = getattr(props[index], 'coords')
             labeledcellData_matrix = labeledcellData_matrix_update(labeledcellData_matrix, index, list_of_indexes)
 
-        save_img(labeledcellData_matrix,"{}_{}".format(patient[0], "labeledcellData"))
+        save_img(labeledcellData_matrix,"p{}_{}".format(patient[0], "labeledcellData"))
         protein_culc(list_proteins, patient[0], labels_max, props,df)
         result.append(df)
     result = pd.concat(result)
