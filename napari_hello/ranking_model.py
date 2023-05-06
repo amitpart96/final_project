@@ -63,7 +63,6 @@ def ranking_model_avg(df, list_of_proteins_to_predict, proteins_list, model_name
     df = df.copy()
     cor_scores, r2_scores, predictions = Counter(list()), Counter(list()), Counter(list())
     random_patients = random.sample(range(1, amount_of_patients + 1), min(5, amount_of_patients))
-
     for patient_number in random_patients:
         print(f'testing patient number :{patient_number}\n')
         df_train = df.loc[
@@ -183,7 +182,7 @@ def plot_graph_cor(DTR_cor_scores, model_name):
 def prediction_matrix_creation(DTR_prediction, df, patient_number, cellLabel_image):
     print(f'inside prediction_matrix_creation: DTR_prediction:\n{DTR_prediction}')
     df = df.copy()
-    protein_prediction = np.zeros((2048, 2048))
+    protein_prediction = np.zeros((np.size(cellLabel_image,0), np.size(cellLabel_image,1)))
 
     patient_numer_df = df.loc[df['SampleID'] == patient_number]  # takes only the test patient
     protein_cellLabel_df = patient_numer_df[['cellLabelInImage']]
@@ -200,7 +199,7 @@ def real_protein_matrix_creation(df, patient, protein, cellLabel_image):
     df = df.copy()
     patient_numer_df = df.loc[df['SampleID'] == patient]  # takes only the patient
     protein_cellLabel_df = patient_numer_df[['cellLabelInImage', protein]]
-    real_protein_matrix = np.zeros((2048, 2048))
+    real_protein_matrix = np.zeros((np.size(cellLabel_image,0), np.size(cellLabel_image,1)))
 
     for index, row in protein_cellLabel_df.iterrows():
         real_protein_matrix[cellLabel_image == int(row['cellLabelInImage'])] = float(row[protein])
