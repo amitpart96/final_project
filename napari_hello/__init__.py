@@ -29,68 +29,9 @@ import re
 from napari.utils.notifications import show_warning
 from pathlib import Path
 
-
-class Options_Patients(Enum):  # todo: fill all the 41 patients
-    patient1 = '1'
-    patient2 = '2'
-    patient3 = '3'
-    patient4 = '4'
-    patient5 = '5'
-    patient6 = '6'
-    patient7 = '7'
-    patient8 = '8'
-    patient9 = '9'
-    patient10 = '10'
-
-
-class Options_Proteins(Enum):
-    Beta_catenin = 'Beta catenin'
-    catenin = 'catenin'
-    CD3 = 'CD3'
-    CD4 = 'CD4'
-    CD8 = 'CD8'
-    CD11b = 'CD11b'
-    CD11c = 'CD11c'
-    CD16 = 'CD16'
-    CD20 = 'CD20'
-    CD31 = 'CD31'
-    CD45 = 'CD45'
-    CD45RO = 'CD45RO'
-    CD56 = 'CD56'
-    CD63 = 'CD63'
-    CD68 = 'CD68'
-    CD138 = 'CD138'
-    CD209 = 'CD209'
-    dsDNA = 'dsDNA'
-    EGFR = 'EGFR'
-    FoxP3 = 'FoxP3'
-    H3K9ac = 'H3K9ac'
-    H3K27me3 = 'H3K27me3'
-    HLA_class_1 = 'HLA_class_1'
-    HLA_DR = 'HLA-DR'
-    IDO = 'IDO'
-    Keratin6 = 'Keratin6'
-    Keratin17 = 'Keratin17'
-    Ki67 = 'Ki67'
-    Lag3 = 'Lag3'
-    MPO = 'MPO'
-    p53 = 'p53'
-    PD1 = 'PD1'
-    PD_L1 = 'PD-L1'
-    phospho_S6 = 'phospho-S6'
-    SMA = 'SMA'
-    Vimentin = 'Vimentin'
-
-
 class Options_Models(Enum):
     DecisionTree = 'DecisionTree'
     XGBoost = 'XGBoost'
-
-
-class Options_Proteins_New_Experiment(Enum):
-    Keratin6 = 'Keratin6'
-    FoxP3 = 'FoxP3'
-    dsDNA = 'dsDNA'
 
 
 viewer = napari.Viewer()
@@ -109,262 +50,6 @@ model_name = None
 cellLabelImages = None
 patient_cellLabel_image = None
 root_directory_path = None
-
-
-@magicgui(chooseProteins=dict(widget_type='Select', choices=Options_Proteins), call_button='Predict Proteins')
-def proteins_predict(chooseProteins):
-    proteins_list_to_predict = [protein.name for protein in chooseProteins]
-    print(proteins_list_to_predict)
-
-    if (len(proteins_list_to_predict) == 0):
-        show_info("please select proteins")
-        return
-    if df is None:
-        show_info("upload csv first")
-        return
-    if patient_cellLabel_image is None:
-        show_info("couldn't find the cellLabelImagePath, make sure the image name is correct")
-        return
-    if patient_number is None:
-        show_info("choose patient number first")
-        return
-    if model_name is None:
-        show_info("choose model first")
-        return
-    show_info("starting to predict proteins")
-    list_of_proteins_to_predict = proteins_list_to_predict  # ["CD45", "dsDNA", "Vimentin"]
-    proteins_list = get_proteins_list(df)
-    predict_k_proteins.predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict, proteins_list,
-                                          model_name, patient_cellLabel_image)
-    show_info('done predict proteins')
-    return
-
-
-# # proteins_predict.show()
-#
-# @magicgui(call_button='Upload cellTable and cellLabelImages')
-# def upload_csv():
-#     root = tk.Tk()
-#     root.withdraw()
-#     try:
-#         global df
-#         filename = fd.askopenfilename(title="open cellData csv")
-#         print(filename)
-#         df = pd.read_csv(filename)
-#         show_info(f'cellTable uploaded successfully')
-#
-#     except:
-#         show_info("add path to cellData.csv in the code")
-#
-#     root = tk.Tk()
-#     root.withdraw()
-#
-#     global cellLabelImages
-#     try:
-#         # create an empty list to store the image data
-#         cellLabelImages = []
-#         # open the directory dialog box and allow the user to select a directory
-#         dir_path = filedialog.askdirectory(title="choose cellLabelImages directory")
-#
-#         # loop through all the files in the selected directory
-#         for filename in os.listdir(dir_path):
-#             # check if the file is an image file
-#             if filename.endswith(".tiff"):
-#                 image_path = os.path.join(dir_path, filename)
-#                 cellLabelImages.append(image_path)
-#         print(f'cellLabelImages={cellLabelImages}')
-#         show_info(f'cellLabelImages uploaded successfully')
-#     except:
-#         show_info("add path to cellLabelImages directory")
-#
-#     choose_model_button.setVisible(True)
-#     ranking_model_button.setVisible(True)
-#     patient_selection_button.setVisible(True)
-#     upload_csv_new_experiment_button.setVisible(True)
-#     return
-
-
-@magicgui(call_button='Upload Segmentation')
-def upload_segmentation():
-    root = tk.Tk()
-    root.withdraw()
-    global segmentation
-    seg = fd.askopenfilename()  # choose segmentation image of the patient
-    # segmentation = Image.open(seg)
-    napari_image = imread(seg)  # Reads an image from file
-    viewer.add_image(napari_image, name="segmentation")  # Adds the image to the viewer and give the image layer a name
-    show_info(f'segmentation uploaded successfully')
-    return
-
-
-def finish_create_csv():
-    show_info('created cellTable successfully')
-    create_CSV_button.setVisible(True)
-    ranking_model_button.setVisible(True)
-    patient_selection_button.setVisible(True)
-
-
-def exepc_in_create_csv():
-    create_CSV_button.setVisible(True)
-
-
-@magicgui(call_button='Create cellTable')
-def create_CSV():
-    # create_CSV_button.setVisible(False)
-    show_info("Processing cellTable creation")
-    thread = threading.Thread(target=create_csv.main(root_directory_path))
-    thread.start()
-    return
-
-
-@magicgui(call_button='Choose Model')
-def choose_model(model_selection: Options_Models):
-    global model_name
-    model_name = model_selection.value
-    show_info(f'{model_name} model is chosen')
-    return
-
-
-def get_proteins_list(df):
-    column_names = df.columns.tolist()
-    # Columns to remove
-    columns_to_remove = ['SampleID', 'cellLabelInImage', 'cellSize']  # List of column names to remove
-
-    # Remove columns from the list
-    list_of_proteins_from_df = [col for col in column_names if col not in columns_to_remove]
-
-    return list_of_proteins_from_df
-
-
-@magicgui(call_button='Rank Proteins')
-def rankingg_model():
-    if df is None:
-        show_info("upload csv first")
-        return
-    if model_name is None:
-        show_info("choose model first")
-        return
-    dir_contents = os.listdir(root_directory_path)
-    amount_of_patients = len(dir_contents)
-    show_info("starting to rank proteins")
-    proteins_list = get_proteins_list(df)
-    ranking_model.main(viewer, df, model_name, proteins_list, amount_of_patients)
-    show_info('done rank proteins')
-    return
-
-
-@magicgui(call_button='Find Anomaly')
-def protein_selection(select_protein: Options_Proteins):
-    # Do something with image and list of selected options
-    global protein
-    protein = select_protein.value
-    show_info(f'{protein} is chosen')
-    global prediction_matrix
-    global real_protein_matrix
-    global std_real
-    global file_name_std
-    global layer_std
-    if df is None:
-        show_info("upload csv first")
-        return
-    if cellLabelImages is None:
-        show_info("upload cellLabelImages first")
-        return
-    if patient_number is None:
-        show_info("choose patient number first")
-        return
-    if protein is None:
-        show_info("choose protein first")
-        return
-    if model_name is None:
-        show_info("choose model first")
-        return
-    if patient_cellLabel_image is None:
-        show_info("couldn't find the cellLabelImagePath, make sure the image name is correct")
-        return
-    show_info("starting to find anomaly")
-    proteins_list = get_proteins_list(df)
-    prediction_matrix, real_protein_matrix, std_real, file_name_std, layer_std = find_anomaly.main(viewer, df,
-                                                                                                   patient_number,
-                                                                                                   protein, model_name,
-                                                                                                   proteins_list,
-                                                                                                   patient_cellLabel_image)
-    show_info('done find anomaly')
-    return
-
-
-
-
-@magicgui(
-    call_button="change std",
-    slider_float={"widget_type": "FloatSlider", 'max': 10},
-)
-def widget_demo(slider_float=2):
-    print(slider_float)
-    find_anomaly.update_difference_matrix_std(viewer, prediction_matrix, real_protein_matrix, std_real, slider_float,
-                                              file_name_std, layer_std)
-    return
-
-
-
-@magicgui(call_button='Create Segmentation')
-def create_seggmentation():
-    show_info("starting to create segmentations")
-    segmentation.main(root_directory_path)
-    show_info('done to create segmentations')
-    return
-
-
-@magicgui(call_button='New Experiment')
-def new_exp():
-    create_segmentation_button.setVisible(True)
-    create_CSV_button.setVisible(True)
-
-    upload_segmentation_button.setVisible(False)
-    upload_csv_button.setVisible(False)
-    patient_selection_button.setVisible(False)
-    # upload_images_button.setVisible(False)
-    choose_model_button.setVisible(False)
-    ranking_model_button.setVisible(False)
-    k_proteins_predict_button.setVisible(False)
-    protein_selection_button.setVisible(False)
-    change_std_button.setVisible(False)
-    other_exp_m_button.setVisible(False)
-
-    new_exp_button.setVisible(False)
-    old_exp_button.setVisible(True)
-    return
-
-
-@magicgui(call_button='Old Experiment')
-def old_exp():
-    upload_segmentation_button.setVisible(True)
-    upload_csv_button.setVisible(True)
-
-    create_segmentation_button.setVisible(False)
-    create_CSV_button.setVisible(False)
-    new_exp_button.setVisible(True)
-    old_exp_button.setVisible(False)
-    return
-
-
-@magicgui(call_button='Upload Experiment')
-def upload_exp():
-    root = tk.Tk()
-    root.withdraw()
-
-    global root_directory_path
-    try:
-        # open the directory dialog box and allow the user to select a directory
-        root_directory_path = filedialog.askdirectory(title="choose the root experiment directory")
-        show_info(f'root experiment directory chosen successfully')
-    except:
-        show_info("add path to root experiment directory")
-    upload_exp_button.setVisible(False)
-    new_exp_button.setVisible(True)
-    old_exp_button.setVisible(True)
-    return
-
 
 DEFAULT_CHOICES = []
 DEFAULT_CHOICES_find_anomaly = []
@@ -500,6 +185,197 @@ def proteins_predict1():
 
     return widget
 
+@magicgui(call_button='Upload Segmentation')
+def upload_segmentation():
+    root = tk.Tk()
+    root.withdraw()
+    global segmentation
+    seg = fd.askopenfilename()  # choose segmentation image of the patient
+    # segmentation = Image.open(seg)
+    napari_image = imread(seg)  # Reads an image from file
+    viewer.add_image(napari_image, name="segmentation")  # Adds the image to the viewer and give the image layer a name
+    show_info(f'segmentation uploaded successfully')
+    return
+
+
+def finish_create_csv():
+    show_info('created cellTable successfully')
+    create_CSV_button.setVisible(True)
+    ranking_model_button.setVisible(True)
+    patient_selection_button.setVisible(True)
+
+
+def exepc_in_create_csv():
+    create_CSV_button.setVisible(True)
+
+
+@magicgui(call_button='Create cellTable')
+def create_CSV():
+    # create_CSV_button.setVisible(False)
+    show_info("Processing cellTable creation")
+    thread = threading.Thread(target=create_csv.main(root_directory_path))
+    thread.start()
+    return
+
+
+@magicgui(call_button='Choose Model')
+def choose_model(model_selection: Options_Models):
+    global model_name
+    model_name = model_selection.value
+    show_info(f'{model_name} model is chosen')
+    return
+
+
+def get_proteins_list(df):
+    column_names = df.columns.tolist()
+    # Columns to remove
+    columns_to_remove = ['SampleID', 'cellLabelInImage', 'cellSize']  # List of column names to remove
+
+    # Remove columns from the list
+    list_of_proteins_from_df = [col for col in column_names if col not in columns_to_remove]
+
+    return list_of_proteins_from_df
+
+
+@magicgui(call_button='Rank Proteins')
+def rankingg_model():
+    if df is None:
+        show_info("upload csv first")
+        return
+    if model_name is None:
+        show_info("choose model first")
+        return
+    dir_contents = os.listdir(root_directory_path)
+    amount_of_patients = len(dir_contents)
+    show_info("starting to rank proteins")
+    proteins_list = get_proteins_list(df)
+    ranking_model.main(viewer, df, model_name, proteins_list, amount_of_patients)
+    show_info('done rank proteins')
+    return
+
+
+DEFAULT_CHOICES_find_anomalies = []
+
+
+def find_anomlayy(protein_widget, patients_widget):
+    @magicgui(
+        dropdown=dict(
+            widget_type="ComboBox", choices=DEFAULT_CHOICES_find_anomalies, label="Protein to find anomalies",
+        ),
+        call_button="Find anomalies",
+    )
+    def widget(viewer: napari.Viewer, dropdown):
+        if df is None:
+            show_info("upload csv first")
+            return widget
+        if cellLabelImages is None:
+            show_info("upload cellLabelImages first")
+            return widget
+        if patient_number is None:
+            show_info("choose patient number first")
+            return widget
+        if model_name is None:
+            show_info("choose model first")
+            return widget
+        if patient_cellLabel_image is None:
+            show_info("couldn't find the cellLabelImagePath, make sure the image name is correct")
+            return widget
+        global protein
+        protein = dropdown
+        show_info(f'{protein} is chosen')
+        global prediction_matrix
+        global real_protein_matrix
+        global std_real
+        global file_name_std
+        global layer_std
+        show_info("starting to find anomaly")
+        proteins_list = get_proteins_list(df)
+        prediction_matrix, real_protein_matrix, std_real, file_name_std, layer_std = find_anomaly.main(viewer, df,
+                                                                                                       patient_number,
+                                                                                                       protein,
+                                                                                                       model_name,
+                                                                                                       proteins_list,
+                                                                                                       patient_cellLabel_image)
+        show_info('done find anomalies')
+
+        _update_choices_on_file_changesss2(df, widget)
+        if (protein_widget is not None):
+            _update_choices_on_file_changesss2(df, protein_widget)
+        if (patients_widget is not None):
+            _update_patient_choices_on_file_changesss2(df, patients_widget)
+
+    return widget
+
+
+@magicgui(
+    call_button="change std",
+    slider_float={"widget_type": "FloatSlider", 'max': 10},
+)
+def widget_demo(slider_float=2):
+    print(slider_float)
+    find_anomaly.update_difference_matrix_std(viewer, prediction_matrix, real_protein_matrix, std_real, slider_float,
+                                              file_name_std, layer_std)
+    return
+
+
+@magicgui(call_button='Create Segmentation')
+def create_seggmentation():
+    show_info("starting to create segmentations")
+    segmentation.main(root_directory_path)
+    show_info('done to create segmentations')
+    return
+
+
+@magicgui(call_button='New Experiment')
+def new_exp():
+    create_segmentation_button.setVisible(True)
+    create_CSV_button.setVisible(True)
+
+    upload_segmentation_button.setVisible(False)
+    upload_csv_button.setVisible(False)
+    patient_selection_button.setVisible(False)
+    # upload_images_button.setVisible(False)
+    choose_model_button.setVisible(False)
+    ranking_model_button.setVisible(False)
+    k_proteins_predict_button.setVisible(False)
+    protein_selection_button.setVisible(False)
+    change_std_button.setVisible(False)
+    other_exp_m_button.setVisible(False)
+
+    new_exp_button.setVisible(False)
+    old_exp_button.setVisible(True)
+    return
+
+
+@magicgui(call_button='Old Experiment')
+def old_exp():
+    upload_segmentation_button.setVisible(True)
+    upload_csv_button.setVisible(True)
+
+    create_segmentation_button.setVisible(False)
+    create_CSV_button.setVisible(False)
+    new_exp_button.setVisible(True)
+    old_exp_button.setVisible(False)
+    return
+
+
+@magicgui(call_button='Upload Experiment')
+def upload_exp():
+    root = tk.Tk()
+    root.withdraw()
+
+    global root_directory_path
+    try:
+        # open the directory dialog box and allow the user to select a directory
+        root_directory_path = filedialog.askdirectory(title="choose the root experiment directory")
+        show_info(f'root experiment directory chosen successfully')
+    except:
+        show_info("add path to root experiment directory")
+    upload_exp_button.setVisible(False)
+    new_exp_button.setVisible(True)
+    old_exp_button.setVisible(True)
+    return
+
 
 def find_cell_labeled_image(paths, patient_number):
     for path in paths:
@@ -524,44 +400,60 @@ def find_cell_labeled_image(paths, patient_number):
     return None
 
 
-@magicgui(call_button='Select Patient')
-def patient_selection(patient_selection: Options_Patients):
-    # Do something with image and list of selected options
-    global patient_number
-    patient_number = int(patient_selection.value)
-    show_info(f'patient {patient_number} is chosen')
+DEFAULT_CHOICES_PATIENTS = []
 
-    # uploading to the napari viwer the proteins images of the patient
-    directory_path = os.path.join(root_directory_path, str(patient_number))
 
-    # Get a list of all files and directories in the directory
-    files = os.listdir(directory_path)
-    list_img = [(os.path.join(directory_path, file)) for file in files]
+def patient_selection(protein_widget, find_anomaly_widget):
+    @magicgui(
+        dropdown_patients=dict(
+            widget_type="ComboBox", choices=DEFAULT_CHOICES_PATIENTS, label="Patient:",
+        ),
+        call_button='Select Patient',
+    )
+    def widget(viewer: napari.Viewer, dropdown_patients):
+        if df is None:
+            print("return patient widget")
+            return widget
 
-    colors = list(napari.utils.colormaps.AVAILABLE_COLORMAPS)
-    color = 0
-    for img in list_img:
-        channel_image = imread(img)  # Reads an image from file
-        img_name = os.path.basename(img)
-        img_name = img_name.removesuffix('.tiff') + " Patient" + str(patient_number)
-        viewer.add_image(channel_image, name=img_name, colormap=colors[color],
-                         visible=False)  # Adds the image to the viewer and give the image layer a name
-        color += 1
-        if (color >= len(colors)):
-            color = 0
-    show_info(f'patient images uploaded successfully')
+        global patient_number
+        patient_number = int(dropdown_patients)
+        show_info(f'patient {patient_number} is chosen')
 
-    global patient_cellLabel_image
-    patient_cellLabel_image = find_cell_labeled_image(cellLabelImages, patient_number)
+        # uploading to the napari viwer the proteins images of the patient
+        directory_path = os.path.join(root_directory_path, str(patient_number))
 
-    protein_selection_button.setVisible(True)
-    k_proteins_predict_button.setVisible(True)
-    change_std_button.setVisible(True)
-    return
+        # Get a list of all files and directories in the directory
+        files = os.listdir(directory_path)
+        list_img = [(os.path.join(directory_path, file)) for file in files]
+
+        colors = list(napari.utils.colormaps.AVAILABLE_COLORMAPS)
+        color = 0
+        for img in list_img:
+            channel_image = imread(img)  # Reads an image from file
+            img_name = os.path.basename(img)
+            img_name = img_name + " Patient" + str(patient_number)
+            viewer.add_image(channel_image, name=img_name, colormap=colors[color],
+                             visible=False)  # Adds the image to the viewer and give the image layer a name
+            color += 1
+            if color >= len(colors):
+                color = 0
+        show_info(f'patient images uploaded successfully')
+        global patient_cellLabel_image
+        patient_cellLabel_image = find_cell_labeled_image(cellLabelImages, patient_number)
+        protein_selection_button.setVisible(True)
+        k_proteins_predict_button.setVisible(True)
+        change_std_button.setVisible(True)
+        _update_patient_choices_on_file_changesss2(df, widget)
+        if find_anomaly_widget is not None:
+            _update_choices_on_file_changesss2(df, find_anomaly_widget)
+        if protein_widget is not None:
+            _update_choices_on_file_changesss2(df, protein_widget)
+
+    return widget
 
 
 ##################################
-def upload_CellTable_and_cellLabelImage(protein_widget):
+def upload_CellTable_and_cellLabelImage(protein_widget, patients_widget, find_anomaly_widget):
     @magicgui(
         filename={
             "label": "CSV file with proteins to predict",
@@ -574,13 +466,14 @@ def upload_CellTable_and_cellLabelImage(protein_widget):
         },
         call_button="Update files Uploading",
     )
-    def widget(viewer: napari.Viewer,filename=Path.home(), foldername=Path.home()):
-    # Peform main run button function here
+    def widget(viewer: napari.Viewer, filename=Path.home(), foldername=Path.home()):
         if (Path.home() != filename):
             global df
             df = pd.read_csv(filename)
             show_info(f'cellTable uploaded successfully')
-
+            _update_choices_on_file_changesss(widget, protein_widget)
+            _update_choices_on_file_changesss(widget, find_anomaly_widget)
+            _update_patient_choices_on_file_changesss(widget, patients_widget)
         if (Path.home() != foldername):
             global cellLabelImages
             cellLabelImages = []
@@ -590,14 +483,18 @@ def upload_CellTable_and_cellLabelImage(protein_widget):
                 cellLabelImages.append(image_path)
             show_info(f'cellLabelImages uploaded successfully')
         if (filename != Path.home() and foldername != Path.home()):
-            _update_choices_on_file_changesss(widget, protein_widget)
             choose_model_button.setVisible(True)
             ranking_model_button.setVisible(True)
             patient_selection_button.setVisible(True)
             other_exp_m_button.setVisible(True)
+        _update_choices_on_file_changesss(widget, protein_widget)
+        _update_choices_on_file_changesss(widget, find_anomaly_widget)
+        _update_patient_choices_on_file_changesss(widget, patients_widget)
+
     return widget
 
-##################################
+
+DEFAULT_CHOICES2 = []
 
 
 def _update_choices_on_file_changesss(filename_widget, dropdown_widget):
@@ -605,33 +502,98 @@ def _update_choices_on_file_changesss(filename_widget, dropdown_widget):
     filename = filename_widget.filename.value
     choices = None
     if filename.is_file():
-        ddf = pd.read_csv(filename)
-        choices = ddf.columns
+        if filename.suffix == ".csv":
+            df = pd.read_csv(filename)
+            choices = get_proteins_list(df)
+        else:
+            show_warning(f"File {filename} is not a .csv file.")
     if choices is not None:
         dropdown_widget.dropdown.choices = choices
-        print(f'dropdown_widget.dropdown.choices={dropdown_widget.dropdown.choices}')
 
 
-DEFAULT_CHOICES2 = []
-def proteins_predicttt():
+def _update_patient_choices_on_file_changesss(filename_widget, patients_widget):
+    """Return available choices of proteins from csv headers"""
+    filename = filename_widget.filename.value
+    choices = None
+    if filename.is_file():
+        if filename.suffix == ".csv":
+            df = pd.read_csv(filename)
+            choices = df["SampleID"].drop_duplicates()
+        else:
+            show_warning(f"File {filename} is not a .csv file.")
+    if choices is not None:
+        patients_widget.dropdown_patients.choices = choices
+        print(f' patients_widget.dropdown_patients.choices={patients_widget.dropdown_patients.choices}')
+        print(f'choices={choices}')
+    return
+
+
+def _update_choices_on_file_changesss2(df, widget):
+    choices = get_proteins_list(df)
+    if choices is not None:
+        widget.dropdown.choices = choices
+
+
+def _update_patient_choices_on_file_changesss2(df, widget):
+    choices = df["SampleID"].drop_duplicates()
+    if choices is not None:
+        widget.dropdown_patients.choices = choices
+
+
+def proteins_predicttt(patients_widget, find_anomaly_widget):
     @magicgui(
         dropdown=dict(
             widget_type="Select", choices=DEFAULT_CHOICES2, label="Proteins to predict"
         ),
-        call_button="Predict Proteinssssssssss",
+        call_button="Print Proteinssssssssss",
     )
     def widget(viewer: napari.Viewer, dropdown):
         # Perform the prediction here
         proteins_list_to_predict = dropdown
-        print(proteins_list_to_predict)
+
+        if (len(proteins_list_to_predict) == 0):
+            show_info("please select proteins")
+            return widget
+        if df is None:
+            show_info("upload csv first")
+            return widget
+        if patient_cellLabel_image is None:
+            show_info("couldn't find the cellLabelImagePath, make sure the image name is correct")
+            return widget
+        if patient_number is None:
+            show_info("choose patient number first")
+            return widget
+        if model_name is None:
+            show_info("choose model first")
+            return widget
+        show_info("starting to predict proteins")
+        list_of_proteins_to_predict = proteins_list_to_predict  # ["CD45", "dsDNA", "Vimentin"]
+        proteins_list = get_proteins_list(df)
+        predict_k_proteins.predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict, proteins_list,
+                                              model_name, patient_cellLabel_image)
+        show_info('done predict proteins')
+        _update_choices_on_file_changesss2(df, widget)
+        if patients_widget is not None:
+            _update_patient_choices_on_file_changesss2(df, patients_widget)
+        if find_anomaly_widget is not None:
+            _update_choices_on_file_changesss2(df, find_anomaly_widget)
 
     return widget
 
-protein_widget = proteins_predicttt()
-# viewer.window.add_dock_widget(upload_CellTable_and_cellLabelImage(protein_widget), name="Set proteins")
 
-###############################333
 
+global protein_widget
+global find_anomaly_widget
+global patients_widget
+protein_widget = None
+find_anomaly_widget = None
+patients_widget = None
+
+protein_widget = proteins_predicttt(patients_widget,find_anomaly_widget)
+find_anomaly_widget=find_anomlayy(protein_widget,patients_widget)
+patients_widget = patient_selection(protein_widget, find_anomaly_widget)
+
+####################################
 
 # upload, new, old experiment buttons:
 upload_exp_button = viewer.window.add_dock_widget(upload_exp, area='right')
@@ -643,24 +605,28 @@ create_CSV_button = viewer.window.add_dock_widget(create_CSV, area='right')
 
 # uplode buttons:
 upload_segmentation_button = viewer.window.add_dock_widget(upload_segmentation, area='right')
-upload_csv_button = viewer.window.add_dock_widget(upload_CellTable_and_cellLabelImage(protein_widget),
-                                                  name="Upload cellTable and cellLabelImages")
+upload_csv_button = viewer.window.add_dock_widget(
+    upload_CellTable_and_cellLabelImage(protein_widget, patients_widget, find_anomaly_widget),
+    name="Upload cellTable and cellLabelImages")
+
 choose_model_button = viewer.window.add_dock_widget(choose_model, area='right')
 ranking_model_button = viewer.window.add_dock_widget(rankingg_model, area='right')
-patient_selection_button = viewer.window.add_dock_widget(patient_selection, area='right')
-protein_selection_button = viewer.window.add_dock_widget(protein_selection, area='right')
+patient_selection_button = viewer.window.add_dock_widget(patients_widget, area='right')
+patient_selection_button.setToolTip('Click on upload cellTable and cellLabelImages to refresh options')
+protein_selection_button = viewer.window.add_dock_widget(find_anomaly_widget, area='right')
+protein_selection_button.setToolTip('Click on upload cellTable and cellLabelImages to refresh options')
 change_std_button = viewer.window.add_dock_widget(widget_demo, area='right')
-k_proteins_predict_button = viewer.window.add_dock_widget(proteins_predict, area='right')
+k_proteins_predict_button = viewer.window.add_dock_widget(protein_widget, name="Predict Proteins", area='right')
 
-other_exp_m_button=viewer.window.add_dock_widget(proteins_predict1(), name="Predict proteins new experiment", area='right')
-viewer.window.add_dock_widget(proteins_predicttt(), name="Predict proteinssss")
+other_exp_m_button = viewer.window.add_dock_widget(proteins_predict1(), name="Predict proteins new experiment",
+                                                   area='right')
 
 new_exp_button.setVisible(False)
 old_exp_button.setVisible(False)
 create_segmentation_button.setVisible(False)
 create_CSV_button.setVisible(False)
 upload_segmentation_button.setVisible(False)
-# upload_csv_button.setVisible(False)
+upload_csv_button.setVisible(False)
 patient_selection_button.setVisible(False)
 choose_model_button.setVisible(False)
 ranking_model_button.setVisible(False)
@@ -668,7 +634,6 @@ k_proteins_predict_button.setVisible(False)
 protein_selection_button.setVisible(False)
 change_std_button.setVisible(False)
 other_exp_m_button.setVisible(False)
-
 
 
 def message():
