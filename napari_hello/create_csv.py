@@ -49,8 +49,8 @@ def protein_culc(list_proteins, patient, labels_max, props, df):
             x = protein_IMG[list_of_indexes].sum() / cell_size * 100
             col_pro.append(math.log(x + math.sqrt(1+math.pow(x, 2))))
         # calculate a z-score
-        z_score = stats.zscore(col_pro)
-        df[protein.split(".")[0]] = z_score
+        # z_score = stats.zscore(col_pro)
+        df[protein.split(".")[0]] = col_pro
     # df.to_csv('csv.csv', index=False)
     return df
 
