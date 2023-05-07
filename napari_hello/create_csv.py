@@ -23,7 +23,7 @@ def delete_seg(patient, list_proteins):
     for f in os.listdir(patient):
         if os.path.isfile(os.path.join(patient, f)):
             if "Segmentation" in f:
-                print(f)
+                # print(f)
                 list_proteins.remove(f)
 
 
@@ -47,11 +47,11 @@ def protein_culc(list_proteins, patient, labels_max, props, df):
             list_of_indexes = getattr(props[index], 'coords')
             cell_size = getattr(props[index], 'area')
             x = protein_IMG[list_of_indexes].sum() / cell_size * 100
-            col_pro.append(math.log(x + math.sqrt(1 + math.pow(x, 2))))
-            # calculate a z-score
-            # z_score = stats.zscore(col_pro)
-        df[protein.split(".")[0]] = col_pro
-    df.to_csv('csv.csv', index=False)
+            col_pro.append(math.log(x + math.sqrt(1+math.pow(x, 2))))
+        # calculate a z-score
+        z_score = stats.zscore(col_pro)
+        df[protein.split(".")[0]] = z_score
+    # df.to_csv('csv.csv', index=False)
     return df
 
 
