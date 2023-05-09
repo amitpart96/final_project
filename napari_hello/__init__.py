@@ -28,6 +28,8 @@ from sklearn.preprocessing import MinMaxScaler
 import re
 from napari.utils.notifications import show_warning
 from pathlib import Path
+from napari.types import LayerDataTuple
+
 
 class Options_Models(Enum):
     DecisionTree = 'DecisionTree'
@@ -54,7 +56,7 @@ root_directory_path = None
 DEFAULT_CHOICES = []
 DEFAULT_CHOICES_find_anomaly = []
 DEFAULT_CHOICES_PATIENT = []
-
+func_flag = False
 
 def _update_choices_on_file_change(widget):
     """Return available choices of proteins from csv headers"""
@@ -185,6 +187,7 @@ def proteins_predict1():
 
     return widget
 
+
 @magicgui(call_button='Upload Segmentation')
 def upload_segmentation():
     root = tk.Tk()
@@ -251,70 +254,6 @@ def rankingg_model():
     proteins_list = get_proteins_list(df)
     ranking_model.main(viewer, df, model_name, proteins_list, amount_of_patients)
     show_info('done rank proteins')
-    return
-
-
-DEFAULT_CHOICES_find_anomalies = []
-
-
-def find_anomlayy(protein_widget, patients_widget):
-    @magicgui(
-        dropdown=dict(
-            widget_type="ComboBox", choices=DEFAULT_CHOICES_find_anomalies, label="Protein to find anomalies",
-        ),
-        call_button="Find anomalies",
-    )
-    def widget(viewer: napari.Viewer, dropdown):
-        if df is None:
-            show_info("upload csv first")
-            return widget
-        if cellLabelImages is None:
-            show_info("upload cellLabelImages first")
-            return widget
-        if patient_number is None:
-            show_info("choose patient number first")
-            return widget
-        if model_name is None:
-            show_info("choose model first")
-            return widget
-        if patient_cellLabel_image is None:
-            show_info("couldn't find the cellLabelImagePath, make sure the image name is correct")
-            return widget
-        global protein
-        protein = dropdown
-        show_info(f'{protein} is chosen')
-        global prediction_matrix
-        global real_protein_matrix
-        global std_real
-        global file_name_std
-        global layer_std
-        show_info("starting to find anomaly")
-        proteins_list = get_proteins_list(df)
-        prediction_matrix, real_protein_matrix, std_real, file_name_std, layer_std = find_anomaly.main(viewer, df,
-                                                                                                       patient_number,
-                                                                                                       protein,
-                                                                                                       model_name,
-                                                                                                       proteins_list,
-                                                                                                       patient_cellLabel_image)
-        show_info('done find anomalies')
-
-        _update_choices_on_file_changesss2(df, widget)
-        if (protein_widget is not None):
-            _update_choices_on_file_changesss2(df, protein_widget)
-        if (patients_widget is not None):
-            _update_patient_choices_on_file_changesss2(df, patients_widget)
-
-    return widget
-
-
-@magicgui(
-    call_button="change std",
-    slider_float={"widget_type": "FloatSlider", 'max': 10},
-)
-def widget_demo(slider_float=2):
-    print(slider_float)
-    find_anomaly.update_difference_matrix_std(viewer, prediction_matrix, real_protein_matrix, std_real, slider_float,
-                                              file_name_std, layer_std)
     return
 
 
@@ -400,17 +339,21 @@ def find_cell_labeled_image(paths, patient_number):
     return None
 
 
+exp_proteins_choices = None
+exp_patients_choices = None
 DEFAULT_CHOICES_PATIENTS = []
 
 
-def patient_selection(protein_widget, find_anomaly_widget):
+def patient_selection():
     @magicgui(
         dropdown_patients=dict(
             widget_type="ComboBox", choices=DEFAULT_CHOICES_PATIENTS, label="Patient:",
         ),
         call_button='Select Patient',
     )
-    def widget(viewer: napari.Viewer, dropdown_patients):
+    def widget( viewer: napari.Viewer,dropdown_patients):
+        # global func_flag
+        # func_flag = False
         if df is None:
             print("return patient widget")
             return widget
@@ -419,21 +362,21 @@ def patient_selection(protein_widget, find_anomaly_widget):
         patient_number = int(dropdown_patients)
         show_info(f'patient {patient_number} is chosen')
 
-        # uploading to the napari viwer the proteins images of the patient
+        # uploading to the napari viewer the proteins images of the patient
         directory_path = os.path.join(root_directory_path, str(patient_number))
-
         # Get a list of all files and directories in the directory
         files = os.listdir(directory_path)
         list_img = [(os.path.join(directory_path, file)) for file in files]
-
         colors = list(napari.utils.colormaps.AVAILABLE_COLORMAPS)
         color = 0
         for img in list_img:
             channel_image = imread(img)  # Reads an image from file
             img_name = os.path.basename(img)
             img_name = img_name + " Patient" + str(patient_number)
+            print("~~~~1~~~~~`")
             viewer.add_image(channel_image, name=img_name, colormap=colors[color],
-                             visible=False)  # Adds the image to the viewer and give the image layer a name
+                             visible=False)
+            print("~~~~2~~~~~`")
             color += 1
             if color >= len(colors):
                 color = 0
@@ -443,16 +386,73 @@ def patient_selection(protein_widget, find_anomaly_widget):
         protein_selection_button.setVisible(True)
         k_proteins_predict_button.setVisible(True)
         change_std_button.setVisible(True)
-        _update_patient_choices_on_file_changesss2(df, widget)
-        if find_anomaly_widget is not None:
-            _update_choices_on_file_changesss2(df, find_anomaly_widget)
-        if protein_widget is not None:
-            _update_choices_on_file_changesss2(df, protein_widget)
+        # _update_patient_choices_on_file_changesss2(df, widget)
+
+        # func_flag = True
+    return widget
+
+
+DEFAULT_CHOICES_find_anomalies = []
+
+
+def find_anomlayy():
+    @magicgui(
+        dropdown=dict(
+            widget_type="ComboBox", choices=DEFAULT_CHOICES_find_anomalies, label="Protein to find anomalies",
+        ),
+        call_button="Find anomalies",
+    )
+    # def widget(viewer: napari.Viewer, dropdown):
+    def widget(viewer: napari.Viewer, dropdown):
+        if df is None:
+            show_info("upload csv first")
+            return widget
+        if cellLabelImages is None:
+            show_info("upload cellLabelImages first")
+            return widget
+        if patient_number is None:
+            show_info("choose patient number first")
+            return widget
+        if model_name is None:
+            show_info("choose model first")
+            return widget
+        if patient_cellLabel_image is None:
+            show_info("couldn't find the cellLabelImagePath, make sure the image name is correct")
+            return widget
+        global protein
+        protein = dropdown
+        show_info(f'{protein} is chosen')
+        global prediction_matrix
+        global real_protein_matrix
+        global std_real
+        global file_name_std
+        global layer_std
+        show_info("starting to find anomaly")
+        proteins_list = get_proteins_list(df)
+        prediction_matrix, real_protein_matrix, std_real, file_name_std, layer_std = find_anomaly.main(viewer, df,
+                                                                                                       patient_number,
+                                                                                                       protein,
+                                                                                                       model_name,
+                                                                                                       proteins_list,
+                                                                                                       patient_cellLabel_image)
+        show_info('done find anomalies')
+
+        # _update_choices_on_file_changesss2(df, widget)
 
     return widget
 
 
-##################################
+@magicgui(
+    call_button="change std",
+    slider_float={"widget_type": "FloatSlider", 'max': 10},
+)
+def widget_demo(slider_float=2):
+    print(slider_float)
+    find_anomaly.update_difference_matrix_std(viewer, prediction_matrix, real_protein_matrix, std_real, slider_float,
+                                              file_name_std, layer_std)
+    return
+
+
 def upload_CellTable_and_cellLabelImage(protein_widget, patients_widget, find_anomaly_widget):
     @magicgui(
         filename={
@@ -466,6 +466,7 @@ def upload_CellTable_and_cellLabelImage(protein_widget, patients_widget, find_an
         },
         call_button="Update files Uploading",
     )
+    # todo:
     def widget(viewer: napari.Viewer, filename=Path.home(), foldername=Path.home()):
         if (Path.home() != filename):
             global df
@@ -487,14 +488,11 @@ def upload_CellTable_and_cellLabelImage(protein_widget, patients_widget, find_an
             ranking_model_button.setVisible(True)
             patient_selection_button.setVisible(True)
             other_exp_m_button.setVisible(True)
-        _update_choices_on_file_changesss(widget, protein_widget)
-        _update_choices_on_file_changesss(widget, find_anomaly_widget)
-        _update_patient_choices_on_file_changesss(widget, patients_widget)
 
     return widget
 
 
-DEFAULT_CHOICES2 = []
+DEFAULT_CHOICES_OF_PROTEINS = ['default']
 
 
 def _update_choices_on_file_changesss(filename_widget, dropdown_widget):
@@ -509,6 +507,8 @@ def _update_choices_on_file_changesss(filename_widget, dropdown_widget):
             show_warning(f"File {filename} is not a .csv file.")
     if choices is not None:
         dropdown_widget.dropdown.choices = choices
+        global exp_proteins_choices
+        exp_proteins_choices = choices
 
 
 def _update_patient_choices_on_file_changesss(filename_widget, patients_widget):
@@ -523,8 +523,8 @@ def _update_patient_choices_on_file_changesss(filename_widget, patients_widget):
             show_warning(f"File {filename} is not a .csv file.")
     if choices is not None:
         patients_widget.dropdown_patients.choices = choices
-        print(f' patients_widget.dropdown_patients.choices={patients_widget.dropdown_patients.choices}')
-        print(f'choices={choices}')
+        global exp_patients_choices
+        exp_patients_choices = choices
     return
 
 
@@ -540,10 +540,10 @@ def _update_patient_choices_on_file_changesss2(df, widget):
         widget.dropdown_patients.choices = choices
 
 
-def proteins_predicttt(patients_widget, find_anomaly_widget):
+def proteins_predicttt():
     @magicgui(
         dropdown=dict(
-            widget_type="Select", choices=DEFAULT_CHOICES2, label="Proteins to predict"
+            widget_type="Select", choices=DEFAULT_CHOICES_OF_PROTEINS, label="Proteins to predict"
         ),
         call_button="Print Proteinssssssssss",
     )
@@ -572,26 +572,43 @@ def proteins_predicttt(patients_widget, find_anomaly_widget):
         predict_k_proteins.predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict, proteins_list,
                                               model_name, patient_cellLabel_image)
         show_info('done predict proteins')
-        _update_choices_on_file_changesss2(df, widget)
-        if patients_widget is not None:
-            _update_patient_choices_on_file_changesss2(df, patients_widget)
-        if find_anomaly_widget is not None:
-            _update_choices_on_file_changesss2(df, find_anomaly_widget)
+        # _update_choices_on_file_changesss2(df, widget)
 
     return widget
-
 
 
 global protein_widget
 global find_anomaly_widget
 global patients_widget
-protein_widget = None
-find_anomaly_widget = None
-patients_widget = None
 
-protein_widget = proteins_predicttt(patients_widget,find_anomaly_widget)
-find_anomaly_widget=find_anomlayy(protein_widget,patients_widget)
-patients_widget = patient_selection(protein_widget, find_anomaly_widget)
+protein_widget = proteins_predicttt()
+find_anomaly_widget = find_anomlayy()
+patients_widget = patient_selection()
+
+#
+# def update_choices(layer_data: LayerDataTuple):
+#     print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@2")
+#     global func_flag
+#     if func_flag==True:
+#         find_anomaly_widget = globals().get("find_anomaly_widget")
+#         protein_widget = globals().get("protein_widget")
+#         patients_widget = globals().get("patients_widget")
+#         # Update the choices for the dropdown widgets
+#         find_anomaly_widget.dropdown.choices = exp_proteins_choices
+#         protein_widget.dropdown.choices = exp_proteins_choices
+#         patients_widget.dropdown.choices = exp_patients_choices
+#
+
+# try:
+#     # # Connect the update_choices function to the viewer's events
+#     viewer.layers.events.changed.connect(update_choices)
+#     viewer.layers.events.removed.connect(update_choices)
+#     viewer.layers.events.inserted.connect(update_choices)
+#     viewer.layers.events.removing.connect(update_choices)
+#     viewer.layers.events.reordered.connect(update_choices)
+#     # viewer.layers.selection.events.active.connect(update_choices)
+# except Exception as e:
+#     print(traceback.format_exc())
 
 ####################################
 
@@ -602,6 +619,7 @@ old_exp_button = viewer.window.add_dock_widget(old_exp, area='right')
 # create buttons:
 create_segmentation_button = viewer.window.add_dock_widget(create_seggmentation, area='right')
 create_CSV_button = viewer.window.add_dock_widget(create_CSV, area='right')
+
 
 # uplode buttons:
 upload_segmentation_button = viewer.window.add_dock_widget(upload_segmentation, area='right')
