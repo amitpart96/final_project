@@ -152,7 +152,7 @@ def patient(argv):
         protein_culc(list_proteins, patient[0], labels_max, props,df)
         result.append(df)
     result = pd.concat(result)
-    result.to_csv(save_file_name)
+    result.to_csv(save_file_name, index = False)
     print("Done")
     return result
 
