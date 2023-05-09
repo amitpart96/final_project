@@ -129,7 +129,7 @@ def patient():
             labeledcellData_matrix = labeledcellData_matrix_update(labeledcellData_matrix, index, list_of_indexes)
 
         # Save the matrix as an image file
-        save_img(labeledcellData_matrix, "{}_{}".format(patient[0], "labeledcellData"))
+        save_img(labeledcellData_matrix, "p{}_{}".format(patient[1], "labeledcellData"))
         # Calculate information about each protein in the patient's subfolder and add it to the dataframe
         protein_culc(list_proteins, patient[0], labels_max, props, df)
         result.append(df)
