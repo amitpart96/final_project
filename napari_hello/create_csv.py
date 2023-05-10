@@ -92,7 +92,7 @@ def create_csv(root_directory_path):
 
 # This function finds the subfolders of the patients and returns a list of tuples with the path and name of each sub
 # folder
-def patient():
+def patient(path):
     # find the subfolders of the patients - each sujbfolder is one patient that contains his proteins and a segmantation
     list_subfolders_with_paths = [(f.path, f.name) for f in os.scandir(root_dir) if f.is_dir()]
     print(list_subfolders_with_paths)
@@ -129,7 +129,7 @@ def patient():
             labeledcellData_matrix = labeledcellData_matrix_update(labeledcellData_matrix, index, list_of_indexes)
 
         # Save the matrix as an image file
-        save_img(labeledcellData_matrix, "p{}_{}".format(patient[1], "labeledcellData"))
+        save_img(labeledcellData_matrix, "{}/p{}_{}".format(path,patient[1], "labeledcellData"))
         # Calculate information about each protein in the patient's subfolder and add it to the dataframe
         protein_culc(list_proteins, patient[0], labels_max, props, df)
         result.append(df)
@@ -154,7 +154,10 @@ def save_img(matrix, file_name):
 def main(root_directory_path):
     f = create_csv(root_directory_path)
     print(f)
-    data = patient()
+    path = f.name
+    path = path[:path.rfind('/')]
+    print(f'file_path": {path}')
+    data = patient(path)
     write_csv(f, data)
     print("created cellTable successfully")
 
