@@ -346,12 +346,12 @@ DEFAULT_CHOICES_PATIENTS = []
 
 def patient_selection():
     @magicgui(
-        dropdown_patients=dict(
+        dropdown=dict(
             widget_type="ComboBox", choices=DEFAULT_CHOICES_PATIENTS, label="Patient:",
         ),
         call_button='Select Patient',
     )
-    def widget( viewer: napari.Viewer,dropdown_patients):
+    def widget( viewer: napari.Viewer,dropdown):
         # global func_flag
         # func_flag = False
         if df is None:
@@ -359,7 +359,7 @@ def patient_selection():
             return widget
 
         global patient_number
-        patient_number = int(dropdown_patients)
+        patient_number = int(dropdown)
         show_info(f'patient {patient_number} is chosen')
 
         # uploading to the napari viewer the proteins images of the patient
@@ -522,7 +522,7 @@ def _update_patient_choices_on_file_changesss(filename_widget, patients_widget):
         else:
             show_warning(f"File {filename} is not a .csv file.")
     if choices is not None:
-        patients_widget.dropdown_patients.choices = choices
+        patients_widget.dropdown.choices = choices
         global exp_patients_choices
         exp_patients_choices = choices
     return
@@ -537,7 +537,7 @@ def _update_choices_on_file_changesss2(df, widget):
 def _update_patient_choices_on_file_changesss2(df, widget):
     choices = df["SampleID"].drop_duplicates()
     if choices is not None:
-        widget.dropdown_patients.choices = choices
+        widget.dropdown.choices = choices
 
 
 def proteins_predicttt():
@@ -545,7 +545,7 @@ def proteins_predicttt():
         dropdown=dict(
             widget_type="Select", choices=DEFAULT_CHOICES_OF_PROTEINS, label="Proteins to predict"
         ),
-        call_button="Print Proteinssssssssss",
+        call_button="Predict Proteins",
     )
     def widget(viewer: napari.Viewer, dropdown):
         # Perform the prediction here
@@ -601,7 +601,7 @@ patients_widget = patient_selection()
 
 # try:
 #     # # Connect the update_choices function to the viewer's events
-#     viewer.layers.events.changed.connect(update_choices)
+# viewer.layers.events.changed.connect(update_choices)
 #     viewer.layers.events.removed.connect(update_choices)
 #     viewer.layers.events.inserted.connect(update_choices)
 #     viewer.layers.events.removing.connect(update_choices)
