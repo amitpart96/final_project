@@ -16,70 +16,15 @@ import os
 import re
 
 
-# def append_data(labels_max, props, str):
-#     row_data = []
-#     for index in range(0, labels_max):
-#         row_data.append(getattr(props[index], str))
-#     return row_data
-#
-#
-# def protein_culc(list_proteins, patient, labels_max, props, df):
-#     for protein in list_proteins:
-#         protein_IMG = Image.open("{}\{}".format(patient, protein))
-#         print(protein)
-#         # convert img to np array
-#         protein_IMG = np.array(protein_IMG)
-#         col_pro = []
-#         for index in range(0, labels_max):
-#             list_of_indexes = getattr(props[index], 'coords')
-#             col_pro.append(protein_IMG[list_of_indexes].sum())
-#
-#         df[protein] = col_pro
-#         df.to_csv('csv.csv')
-#     return df
-
-# def create_csv(argv):
-#     file = argv[1]
-#     save_file_name = argv[2]
-#     list_subfolders_with_paths = [f.path for f in os.scandir(file) if f.is_dir()]
-#     result = []
-#     for patient in list_subfolders_with_paths:
-#         list_proteins = ([f for f in os.listdir(patient) if os.path.isfile(os.path.join(patient, f))])
-#         for f in os.listdir(patient):
-#             if os.path.isfile(os.path.join(patient, f)) and f.endswith(".tiff"):
-#                 if "Segmentation" in f:
-#                     list_proteins.remove(f)
-#         image = Image.open(patient + '\SegmentationInterior.tiff')
-#         image = np.array(image)
-#         labels = measure.label(image, connectivity=2)
-#         props = measure.regionprops(labels)
-#         labels_max = labels.max()
-#         df = pd.DataFrame()
-#         path = patient.split('\\')
-#         patient_number = path[len(path) - 1]
-#         print(patient_number)
-#         df['patient Number'] = pd.Series([patient_number for x in range(labels_max)])
-#         df.index = np.arange(1, len(df) + 1)
-#         df['cell index'] = np.arange(1, len(df) + 1)
-#         col_sell_size = append_data(labels_max, props, 'area')
-#         df['cell_size'] = col_sell_size
-#         protein_culc(list_proteins, patient, labels_max, props, df)
-#         result.append(df)
-#     result = pd.concat(result)
-#     print(save_file_name)
-#     result.to_csv(save_file_name)
-#
 def delete_seg(patient, list_proteins):
     for f in os.listdir(patient):
         if os.path.isfile(os.path.join(patient, f)) and f.endswith(".tiff"):
             if "Segmentation" in f:
-                print(f)
                 list_proteins.remove(f)
 
 def append_data(labels_max, props,str):
     row_data=[]
     for index in range(0, labels_max):
-        # To-Do: change to the folder name instead of the full path.
         row_data.append(getattr(props[index], str))
     return row_data
 
@@ -94,8 +39,8 @@ def protein_culc(list_proteins, patient, labels_max, props,df):
         for index in range(0, labels_max):
             list_of_indexes = getattr(props[index], 'coords')
             cell_size = getattr(props[index], 'area')
-            x = protein_IMG[list_of_indexes].sum()/cell_size * 100
-            col_pro.append(math.log(x + math.sqrt(1+math.pow(x,2))))
+            x = protein_IMG[list_of_indexes].sum() / cell_size * 100
+            col_pro.append(math.log(x + math.sqrt(1+math.pow(x, 2))))
 
         df[protein.split(".")[0]] = col_pro
         df.to_csv('csv.csv', index = False)
@@ -113,13 +58,11 @@ def labeledcellData_matrix_update(labeledcellData_matrix, index, list_of_indexes
     return labeledcellData_matrix
 
 
-def patient(argv):
-    file = argv[1]
-    save_file_name = argv[2]
+def patient(experiment_path, dir_path):
     # find the subfolders of the patients - each sujbfolder is one patient that contains his proteins and a segmantation
-    list_subfolders_with_paths = [(f.path,f.name) for f in os.scandir(file) if f.is_dir()]
+    list_subfolders_with_paths = [(f.path,f.name) for f in os.scandir(experiment_path) if f.is_dir()]
     print(list_subfolders_with_paths)
-    result = []
+    result_df = []
 
     for patient in list_subfolders_with_paths:
         df = pd.DataFrame()
@@ -148,13 +91,17 @@ def patient(argv):
             list_of_indexes = getattr(props[index], 'coords')
             labeledcellData_matrix = labeledcellData_matrix_update(labeledcellData_matrix, index, list_of_indexes)
 
-        save_img(labeledcellData_matrix,"{}_{}".format(patient[0], "labeledcellData"))
-        protein_culc(list_proteins, patient[0], labels_max, props,df)
-        result.append(df)
-    result = pd.concat(result)
-    result.to_csv(save_file_name, index = False)
+        # Deleting the end of the path of the CSV, which will be saved in the same place
+        print(f"directory_path: {dir_path}")
+        save_img(labeledcellData_matrix, "{}/p{}_{}".format(dir_path, patient[1], "labeledcellData"))
+
+        protein_culc(list_proteins, patient[0], labels_max, props, df)
+        result_df.append(df)
+    result_df = pd.concat(result_df)
+    save_path = "{}/{}".format(dir_path, "cellData.csv")
+    result_df.to_csv(save_path, index = False)
     print("Done")
-    return result
+    return result_df
 
 def save_img(matrix, file_name):
     matrix = matrix.astype(np.uint16)
@@ -168,9 +115,13 @@ def save_img(matrix, file_name):
     return image_filename
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    # create_csv(sys.argv)
-    patient(sys.argv)
+def main(experiment_path, save_path):
+    return patient(experiment_path, save_path)
 
+
+# Press the green button in the gutter to run the script.
+# if __name__ == '__main__':
+#     # create_csv(sys.argv)
+#     # patient(sys.argv)
+#
 
