@@ -270,7 +270,7 @@ def new_exp():
     create_segmentation_button.setVisible(True)
     create_CSV_button.setVisible(True)
 
-    upload_segmentation_button.setVisible(False)
+    # upload_segmentation_button.setVisible(False)
     upload_csv_button.setVisible(False)
     patient_selection_button.setVisible(False)
     # upload_images_button.setVisible(False)
@@ -288,7 +288,7 @@ def new_exp():
 
 @magicgui(call_button='Old Experiment')
 def old_exp():
-    upload_segmentation_button.setVisible(True)
+    # upload_segmentation_button.setVisible(True)
     upload_csv_button.setVisible(True)
 
     create_segmentation_button.setVisible(False)
@@ -622,7 +622,7 @@ create_CSV_button = viewer.window.add_dock_widget(create_CSV, area='right')
 
 
 # uplode buttons:
-upload_segmentation_button = viewer.window.add_dock_widget(upload_segmentation, area='right')
+# upload_segmentation_button = viewer.window.add_dock_widget(upload_segmentation, area='right')
 upload_csv_button = viewer.window.add_dock_widget(
     upload_CellTable_and_cellLabelImage(protein_widget, patients_widget, find_anomaly_widget),
     name="Upload cellTable and cellLabelImages")
@@ -643,7 +643,7 @@ new_exp_button.setVisible(False)
 old_exp_button.setVisible(False)
 create_segmentation_button.setVisible(False)
 create_CSV_button.setVisible(False)
-upload_segmentation_button.setVisible(False)
+# upload_segmentation_button.setVisible(False)
 upload_csv_button.setVisible(False)
 patient_selection_button.setVisible(False)
 choose_model_button.setVisible(False)
