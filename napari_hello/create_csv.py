@@ -56,8 +56,10 @@ def protein_culc(list_proteins, patient, labels_max, props, df):
 
 
 # create the labeled cell data matrix
-def labeledcellData_matrix_create(patient):
-    labeledcellData_matrix = np.ones((2048, 2048))
+def labeledcellData_matrix_create(shape):
+    size1 = shape[0]
+    size2 = shape[1]
+    labeledcellData_matrix = np.ones((size1, size2))
     return labeledcellData_matrix
 
 
@@ -110,6 +112,7 @@ def patient(path):
         # Load the segmentation image and use it to label the cells
         image = Image.open(patient[0] + '\SegmentationInterior.tiff')
         image = np.array(image)
+
         labels = measure.label(image, connectivity=2)
         props = measure.regionprops(labels)
         labels_max = labels.max()
@@ -122,7 +125,7 @@ def patient(path):
         df['cellSize'] = col_sell_size
 
         # Create a matrix to store information about each cell in the segmentation image
-        labeledcellData_matrix = labeledcellData_matrix_create(patient[0])
+        labeledcellData_matrix = labeledcellData_matrix_create(image.shape)
         for index in range(0, labels_max):
             # Get the coordinates of each pixel in the cell and update the matrix with the cell's information
             list_of_indexes = getattr(props[index], 'coords')
@@ -162,6 +165,7 @@ def main(root_directory_path):
     print("created cellTable successfully")
 
 
-# Press the green button in the gutter to run the script.
+#Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     main(sys.argv)
+
