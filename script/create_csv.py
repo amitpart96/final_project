@@ -99,21 +99,41 @@ def patient(experiment_path, dir_path):
         result_df.append(df)
     result_df = pd.concat(result_df)
     save_path = "{}/{}".format(dir_path, "cellData.csv")
-    result_df.to_csv(save_path, index = False)
+    file_number = 0
+    print(save_path)
+    while os.path.exists(save_path):
+        file_number += 1
+        # save_path = f'{dir_path}_cellData{file_number}.csv'
+        save_path = "{}/cellData{}.csv".format(dir_path, file_number)
+    print(save_path)
+    result_df.to_csv(save_path, index=False)
     print("Done")
     return result_df
 
+# def save_img(matrix, file_name):
+#     matrix = matrix.astype(np.uint16)
+#     print(np.amax(matrix))
+#     new_im = Image.fromarray(matrix)
+#     # new_im.show()
+#     image_filename = f'{file_name}.tiff'
+#     print(image_filename)
+#     # save image using extension
+#     new_im.save(image_filename)
+#     return image_filename
+#
 def save_img(matrix, file_name):
     matrix = matrix.astype(np.uint16)
-    print(np.amax(matrix))
     new_im = Image.fromarray(matrix)
-    # new_im.show()
+
+    # Append a number to the filename if it already exists
+    file_number = 0
     image_filename = f'{file_name}.tiff'
-    print(image_filename)
-    # save image using extension
+    while os.path.exists(image_filename):
+        file_number += 1
+        image_filename = f'{file_name}{file_number}.tiff'
+
     new_im.save(image_filename)
     return image_filename
-
 
 def main(experiment_path, save_path):
     return patient(experiment_path, save_path)

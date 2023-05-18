@@ -12,7 +12,7 @@ from PIL import Image
 import ranking_model
 
 
-def find_anomaly(df, protein, patient, model_name,proteins_list,patient_cellLabel_image,save_path):
+def find_anomaly(df, protein, patient, model_name,proteins_list,patient_cellLabel_image,save_path,std):
     df = df.copy()
     print(f'starting patient number: {patient}')
     print("before ranking model function call")
@@ -32,35 +32,24 @@ def find_anomaly(df, protein, patient, model_name,proteins_list,patient_cellLabe
         std_real = real_protein_matrix.std()
         print(std_real)
         # difference by std
-        difference_matrix_std = create_difference_matrix_std(prediction_matrix, real_protein_matrix, std_real)
+        difference_matrix_std = create_difference_matrix_std(prediction_matrix, real_protein_matrix, std_real, std)
         difference_matrix = abs(np.subtract(real_protein_matrix, prediction_matrix))
         # difference_matrix to image:
         diff_img = ranking_model.save_img(difference_matrix,"{}/difference_matrix_{}_{}".format(save_path, patient, protein))
         diff_img_std = ranking_model.save_img(difference_matrix_std,"{}/difference_matrix_std_{}_{}".format(save_path, patient, protein))
         file_name_std = f'difference_matrix_std_{patient}_{protein}'
-    print(f'finished patient number: {patient}') #DELET??
+    print(f'finished patient number: {patient}')
     return real_img, pred_img, diff_img, diff_img_std, prediction_matrix, real_protein_matrix, std_real, file_name_std
 
 
-def create_difference_matrix_std(prediction_matrix, real_protein_matrix, std_real):
+def create_difference_matrix_std(prediction_matrix, real_protein_matrix, std_real, std):
     difference_matrix_std_tmp = abs(np.subtract(prediction_matrix, real_protein_matrix))
-    difference_matrix_std = (difference_matrix_std_tmp >= 2 * std_real)
+    difference_matrix_std = (difference_matrix_std_tmp >= std * std_real)
     print((f'std matrix Type: {type(difference_matrix_std)}'))
     return difference_matrix_std
 
 
-def update_difference_matrix_std(viewer, prediction_matrix, real_protein_matrix, std_real, slider_float, file_name_std,
-                                 layer_std):
-    difference_matrix_std_tmp = abs(np.subtract(prediction_matrix, real_protein_matrix))
-    difference_matrix_std = (difference_matrix_std_tmp >= slider_float * std_real)
-    print((f'std matrix Type: {type(difference_matrix_std)}'))
-    diff_img_std = ranking_model.save_img(difference_matrix_std, file_name_std)
-    napari_image = imread(diff_img_std)  # Reads an image from file
-    print("1-2-3")
-    layer_std.data = napari_image
-
-
-def main(both ,df, patient_number, protein, model_name, save_path):
+def main(both ,df, patient_number, protein, model_name, save_path,std):
 
     if both != 'True':
         df = pd.read_csv(df)
@@ -68,18 +57,12 @@ def main(both ,df, patient_number, protein, model_name, save_path):
     path_imag = "{}\p{}_{}".format(save_path, patient_number, "labeledcellData.tiff")
     cellLabel_image = Image.open(path_imag)
     array_img = np.asarray(cellLabel_image)
-    print("***************************************")
     print(array_img)
-    print("***************************************")
     column_names = df.columns.tolist()
     # Columns to remove
     columns_to_remove = ['SampleID', 'cellLabelInImage', 'cellSize']  # List of column names to remove
     proteins_list = [col for col in column_names if col not in columns_to_remove]
-    # print(proteins_list)
     print(df)
     list_of_proteins_to_predict = [protein]
-    find_anomaly(df, list_of_proteins_to_predict, patient_number, model_name,proteins_list,array_img,save_path)
+    find_anomaly(df, list_of_proteins_to_predict, patient_number, model_name,proteins_list,array_img,save_path,std)
 
-
-# if __name__ == "__main__":
-#      test(sys.argv)

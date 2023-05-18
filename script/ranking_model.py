@@ -1,3 +1,4 @@
+import os
 from collections import Counter
 import pandas as pd
 from sklearn.tree import DecisionTreeRegressor
@@ -23,17 +24,14 @@ def ranking_model(df, patient_number, list_of_proteins_to_predict, proteins_list
         # we will put all the rest proteins inside X_train:
         pl_copy = proteins_list.copy()
         pl_copy.remove(protein)
-        print(pl_copy)
         X_train = df_train[pl_copy]
         X_test = df_test[pl_copy]
         if (model_name == 'XGBoost'):
-            print("YES")
             DTR_cor_score, DTR_r2_score, DTR_prediction = model_XGBoostRegressor(X_train, y_train, X_test, y_test)
         else:
             DTR_cor_score, DTR_r2_score, DTR_prediction = model_DecisionTreeRegressor(X_train, y_train, X_test, y_test)
         print(f'DTR r2 score: {DTR_r2_score}')
         print(f'DTR cor score: {DTR_cor_score[0, 1]}\n')
-        # print("DTR prediction: " + str(DTR_prediction))
 
         DTR_cor_scores[protein] = float(DTR_cor_score[0, 1])
         DTR_r2_scores[protein] = DTR_r2_score
@@ -80,8 +78,7 @@ def calculate_r2_score(y_test, prediction):
 def prediction_matrix_creation(DTR_prediction, df, patient_number, cellLabel_image):
     print(f'inside prediction_matrix_creation: DTR_prediction:\n{DTR_prediction}')
     df = df.copy()
-    protein_prediction = np.zeros((2048, 2048))
-    df['SampleID'] = df['SampleID'].astype(str)
+    protein_prediction = np.zeros((np.size(cellLabel_image, 0), np.size(cellLabel_image, 1)))    df['SampleID'] = df['SampleID'].astype(str)
     patient_numer_df = df.loc[df['SampleID'] == patient_number]  # takes only the test patient
     protein_cellLabel_df = patient_numer_df[['cellLabelInImage']]
     print(f'patient_numer_df: {patient_numer_df}')
@@ -99,8 +96,7 @@ def real_protein_matrix_creation(df, patient, protein, cellLabel_image):
     df = df.copy()
     patient_numer_df = df.loc[df['SampleID'] == patient]  # takes only the patient
     protein_cellLabel_df = patient_numer_df[['cellLabelInImage', protein]]
-    real_protein_matrix = np.zeros((2048, 2048))
-
+    real_protein_matrix = np.zeros((np.size(cellLabel_image, 0), np.size(cellLabel_image, 1)))
     for index, row in protein_cellLabel_df.iterrows():
         real_protein_matrix[cellLabel_image == int(row['cellLabelInImage'])] = float(row[protein])
     return real_protein_matrix
@@ -109,9 +105,13 @@ def real_protein_matrix_creation(df, patient, protein, cellLabel_image):
 def save_img(matrix, file_name):
     matrix = (matrix * 255).round().astype(np.uint8)
     new_im = Image.fromarray(matrix)
-    # new_im.show()
+    # Append a number to the filename if it already exists
+    file_number = 0
     image_filename = f'{file_name}.tiff'
+    while os.path.exists(image_filename):
+        file_number += 1
+        image_filename = f'{file_name}{file_number}.tiff'
     print(image_filename)
-    # save image using extension
+    # save image
     new_im.save(image_filename)
     return image_filename
