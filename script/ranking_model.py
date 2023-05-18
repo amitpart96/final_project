@@ -114,6 +114,6 @@ def save_img(matrix, file_name):
         file_number += 1
         image_filename = f'{file_name}{file_number}.tiff'
     print(image_filename)
-    # save image using extension
+    # save image
     new_im.save(image_filename)
     return image_filename
