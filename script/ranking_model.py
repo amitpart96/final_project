@@ -78,8 +78,7 @@ def calculate_r2_score(y_test, prediction):
 def prediction_matrix_creation(DTR_prediction, df, patient_number, cellLabel_image):
     print(f'inside prediction_matrix_creation: DTR_prediction:\n{DTR_prediction}')
     df = df.copy()
-    protein_prediction = np.zeros((2048, 2048))
-    df['SampleID'] = df['SampleID'].astype(str)
+    protein_prediction = np.zeros((np.size(cellLabel_image, 0), np.size(cellLabel_image, 1)))    df['SampleID'] = df['SampleID'].astype(str)
     patient_numer_df = df.loc[df['SampleID'] == patient_number]  # takes only the test patient
     protein_cellLabel_df = patient_numer_df[['cellLabelInImage']]
     print(f'patient_numer_df: {patient_numer_df}')
@@ -97,8 +96,7 @@ def real_protein_matrix_creation(df, patient, protein, cellLabel_image):
     df = df.copy()
     patient_numer_df = df.loc[df['SampleID'] == patient]  # takes only the patient
     protein_cellLabel_df = patient_numer_df[['cellLabelInImage', protein]]
-    real_protein_matrix = np.zeros((2048, 2048))
-
+    real_protein_matrix = np.zeros((np.size(cellLabel_image, 0), np.size(cellLabel_image, 1)))
     for index, row in protein_cellLabel_df.iterrows():
         real_protein_matrix[cellLabel_image == int(row['cellLabelInImage'])] = float(row[protein])
     return real_protein_matrix
