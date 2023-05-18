@@ -1,3 +1,4 @@
+import os
 from collections import Counter
 import pandas as pd
 from sklearn.tree import DecisionTreeRegressor
@@ -23,17 +24,14 @@ def ranking_model(df, patient_number, list_of_proteins_to_predict, proteins_list
         # we will put all the rest proteins inside X_train:
         pl_copy = proteins_list.copy()
         pl_copy.remove(protein)
-        print(pl_copy)
         X_train = df_train[pl_copy]
         X_test = df_test[pl_copy]
         if (model_name == 'XGBoost'):
-            print("YES")
             DTR_cor_score, DTR_r2_score, DTR_prediction = model_XGBoostRegressor(X_train, y_train, X_test, y_test)
         else:
             DTR_cor_score, DTR_r2_score, DTR_prediction = model_DecisionTreeRegressor(X_train, y_train, X_test, y_test)
         print(f'DTR r2 score: {DTR_r2_score}')
         print(f'DTR cor score: {DTR_cor_score[0, 1]}\n')
-        # print("DTR prediction: " + str(DTR_prediction))
 
         DTR_cor_scores[protein] = float(DTR_cor_score[0, 1])
         DTR_r2_scores[protein] = DTR_r2_score
@@ -109,8 +107,12 @@ def real_protein_matrix_creation(df, patient, protein, cellLabel_image):
 def save_img(matrix, file_name):
     matrix = (matrix * 255).round().astype(np.uint8)
     new_im = Image.fromarray(matrix)
-    # new_im.show()
+    # Append a number to the filename if it already exists
+    file_number = 0
     image_filename = f'{file_name}.tiff'
+    while os.path.exists(image_filename):
+        file_number += 1
+        image_filename = f'{file_name}{file_number}.tiff'
     print(image_filename)
     # save image using extension
     new_im.save(image_filename)
