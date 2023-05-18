@@ -19,7 +19,7 @@ parser.add_argument("-num", "--number", dest="number", help="patient number")
 parser.add_argument("-pro", "--protein", dest="protein", help="protein name")
 parser.add_argument("-mod", "--modelname", dest="modelname", help="XGBoost/DecisionTree")
 parser.add_argument("-cell", "--celllabel", dest="celllabel", help="The path of the images cell label")
-parser.add_argument("-std",  dest="std", help="")
+parser.add_argument("-std",  dest="std", default="2", type=int, help="")
 
 
 args = parser.parse_args()
@@ -34,12 +34,12 @@ if __name__ == "__main__":
          if args.both == "True":
              print("run find anomaly")
              print(f'df : {result_df}')
-             find_anomaly.main(args.both, result_df, args.number, args.protein, args.modelname, args.save)
+             find_anomaly.main(args.both, result_df, args.number, args.protein, args.modelname, args.save, args.std)
              print("done!")
          else:
              print("Done!")
     else:
          print("run find anomaly")
-         # find_anomaly.main(args.both, args.df, args.number, args.protein, args.modelname, args.celllabel)
+         find_anomaly.main(args.both, args.df, args.number, args.protein, args.modelname, args.celllabel, args.stds)
          print("done find anomaly")
 
