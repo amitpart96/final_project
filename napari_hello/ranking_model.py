@@ -233,6 +233,12 @@ def visual_prediction(df, proteins_to_predict, patient):
 def main(viewer, df, model_name, proteins_list, amount_of_patients):
     # todo: delete this list
     proteins_list = ["CD45", "dsDNA", "Vimentin"]
+    # proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31", "PD-L1",
+    #                  "EGFR",
+    #                  "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO",
+    #                  "CD20",
+    #                  "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
+    #                  "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
     DTR_cor_scores, DTR_r2_scores, DTR_prediction = ranking_model_avg(df, proteins_list, proteins_list, model_name,
                                                                       amount_of_patients)
     # r2 plot
