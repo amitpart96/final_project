@@ -21,7 +21,7 @@ from napari_hello import find_anomaly
 from napari_hello import new_experiment
 from napari_hello import predict_k_proteins
 from napari_hello import new_experiment
-# from napari_hello import segmentation
+from napari_hello import segmentation
 from magicgui.widgets import Select
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -40,7 +40,6 @@ viewer = napari.Viewer()
 patient_number = None
 protein = None
 df = None
-segmentation = None
 prediction_matrix = None
 real_protein_matrix = None
 std_real = None
@@ -188,17 +187,17 @@ def proteins_predict1():
     return widget
 
 
-@magicgui(call_button='Upload Segmentation')
-def upload_segmentation():
-    root = tk.Tk()
-    root.withdraw()
-    global segmentation
-    seg = fd.askopenfilename()  # choose segmentation image of the patient
-    # segmentation = Image.open(seg)
-    napari_image = imread(seg)  # Reads an image from file
-    viewer.add_image(napari_image, name="segmentation")  # Adds the image to the viewer and give the image layer a name
-    show_info(f'segmentation uploaded successfully')
-    return
+# @magicgui(call_button='Upload Segmentation')
+# def upload_segmentation():
+#     root = tk.Tk()
+#     root.withdraw()
+#     global segmentation
+#     seg = fd.askopenfilename()  # choose segmentation image of the patient
+#     # segmentation = Image.open(seg)
+#     napari_image = imread(seg)  # Reads an image from file
+#     viewer.add_image(napari_image, name="segmentation")  # Adds the image to the viewer and give the image layer a name
+#     show_info(f'segmentation uploaded successfully')
+#     return
 
 
 def finish_create_csv():
@@ -261,6 +260,8 @@ def rankingg_model():
 @magicgui(call_button='Create Segmentation')
 def create_seggmentation():
     show_info("starting to create segmentations")
+    global root_directory_path
+    print("root2 : ",root_directory_path)
     segmentation.main(root_directory_path)
     show_info('done to create segmentations')
     return
@@ -313,15 +314,13 @@ def upload_exp():
             root = tk.Tk()
             root.withdraw()
             global root_directory_path
-            try:
-                # open the directory dialog box and allow the user to select a directory
-                root_directory_path = foldername
-                show_info(f'root experiment directory chosen successfully')
-            except:
-                show_info("add path to root experiment directory")
+            # open the directory dialog box and allow the user to select a directory
+            root_directory_path = foldername
+            show_info("add path to root experiment directory")
             upload_exp_button.setVisible(False)
             new_exp_button.setVisible(True)
             old_exp_button.setVisible(True)
+            print("root: ", root_directory_path)
     return widget
 
 # @magicgui(call_button='Upload Experiment')

@@ -47,9 +47,11 @@ def main(root_directory_path):
     filesname_membrane = [os.path.basename(filename) for filename in
                           filespath]  # get the base filename without the directory path
     print("choose membrane proteins: ", filesname_membrane)
-    some_image = np.asarray(Image.open(path + "/" + filesname_nuclear[0] + ".tiff"))
+    path_for_some_image =  str(root_dir) + "/" + list_patient[0] + "/" + filesname_nuclear[0] + ".tiff"
+    some_image = np.asarray(Image.open(path_for_some_image))
+
     for patient in list_patient:
-        path = root_dir + "/" + patient
+        path = str(root_dir) + "/" + patient
         sum_nuclear = np.zeros((np.size(some_image,0), np.size(some_image,1)), dtype=np.uint8)
         sum_membrane = np.zeros((np.size(some_image,0), np.size(some_image,1)), dtype=np.uint8)
         for protein in filesname_nuclear:
