@@ -71,9 +71,8 @@ def _update_choices_on_file_change(widget):
         if filename.suffix == ".csv":
             df_new_experiment = pd.read_csv(filename)
             choices = sorted(set(df.columns) - set(df_new_experiment.columns))
-            choices_patient = df_new_experiment["SampleID"].drop_duplicates()
-            choices_find_anomaly = np.setdiff1d(np.intersect1d(df.columns, df_new_experiment.columns),
-                                                np.array(['SampleID', 'cellLabelInImage', 'cellSize']))
+            choices_patient = sorted(df_new_experiment["SampleID"].drop_duplicates())
+            choices_find_anomaly = sorted(np.setdiff1d(np.intersect1d(df.columns, df_new_experiment.columns),np.array(['SampleID', 'cellLabelInImage', 'cellSize'])))
             print(choices_patient)
             print(choices)
             print(choices_find_anomaly)
@@ -82,15 +81,15 @@ def _update_choices_on_file_change(widget):
     if choices is not None:
         widget.dropdown.choices = choices
     if choices_patient is not None:
-        print(type(widget.dropdown_patient.choices))
-        print(widget.dropdown_patient.choices)
+        #print(type(widget.dropdown_patient.choices))
+        #print(widget.dropdown_patient.choices)
+        #widget.dropdown_patient.choices = choices_patient
+        #print(tuple(sorted(widget.dropdown_patient.choices)))
+        #widget.dropdown_patient.choices = tuple(sorted(widget.dropdown_patient.choices))
         widget.dropdown_patient.choices = choices_patient
-        print(tuple(sorted(widget.dropdown_patient.choices)))
-        widget.dropdown_patient.choices = tuple(sorted(widget.dropdown_patient.choices))
         print(widget.dropdown_patient.choices)
     if choices_find_anomaly is not None:
         widget.dropdown_find_anomaly.choices = choices_find_anomaly
-
 
 def proteins_predict1():
     @magicgui(
@@ -112,34 +111,43 @@ def proteins_predict1():
         dropdown_find_anomaly=dict(
             widget_type="ComboBox", choices=DEFAULT_CHOICES_find_anomaly, label="Proteins to predict- Find anomaly",
         ),
+        comboBox_model=dict(
+            widget_type="ComboBox", choices=['DesicionTree', 'XGBoost'], label="Patient to predict",
+        ),
         other_button=dict(widget_type="PushButton", text="Find Anomaly"),
         call_button="Predict Proteins",
-
+        
     )
-    def widget(viewer: napari.Viewer, dropdown_patient, dropdown, dropdown_find_anomaly, other_button,
-               filename=Path.home(), foldername=Path.home()):
-        # def widget(dropdown, dropdown_patient, filename=Path.home()):
+
+    def widget(viewer: napari.Viewer, dropdown_patient, dropdown,dropdown_find_anomaly,other_button,comboBox_model,filename=Path.home(), foldername=Path.home()):
         # Perform the prediction here
+        if df is None:
+            show_info("upload csv first")
+            return
+        if df_new_experiment is None:
+            show_info("upload csv new experiment")
+            return
+        if (len(dropdown) == 0):
+            show_info("please select proteins - new Experiment")
+            return
+
+        if dropdown_patient is None:
+            show_info("choose patient number first (New Experiment)")
+            return
+
+
+
         proteins_list_to_predict = dropdown
         patient_number = dropdown_patient
         print(proteins_list_to_predict)
         print(patient_number)
         patient_number_new_experiment = patient_number
-        # proteins_list = [protein.name for protein in choose_Proteins_New_Experiment]
+        #proteins_list = [protein.name for protein in choose_Proteins_New_Experiment]
 
-        # print(protein_prediction_options_new_exeriment)
-        list_of_proteins_to_train = np.setdiff1d(np.intersect1d(df.columns, df_new_experiment.columns),
-                                                 np.array(['SampleID', 'cellLabelInImage', 'cellSize']))
-        # if (len(proteins_list) == 0):
-        #     show_info("please select proteins - new Experiment")
-        #     return
-        # if df_new_experiment_normalized is None:
-        #     show_info("upload csv first")
-        #     return
-        # if patient_number_new_experiment is None:
-        #     show_info("choose patient number first (New Experiment)")
-        #     return
-        # show_info('done find anomaly')
+        # list of proteins to train - the intersection of the proteins of old experiment and new experiment
+        list_of_proteins_to_train = np.setdiff1d(np.intersect1d(df.columns, df_new_experiment.columns),np.array(['SampleID', 'cellLabelInImage', 'cellSize']))
+
+   # show_info('done find anomaly')
         print(foldername)
         # loop through all the files in the selected directory
 
@@ -152,16 +160,22 @@ def proteins_predict1():
         print("before find patient_cellLabel_image")
         print(image_paths)
         print(patient_number_new_experiment)
-        patient_cellLabel_image = find_cell_labeled_image(image_paths, patient_number_new_experiment)
+        patient_cellLabel_image_new_experiment = find_cell_labeled_image(image_paths, patient_number_new_experiment)
+
+        if patient_cellLabel_image_new_experiment is None:
+            show_info("choose folder with cellLabeled images of the patient (New Experiment)")
+            return
 
         show_info("starting to predict proteins New Experiment")
         list_of_proteins_to_predict = proteins_list_to_predict  # ["CD45", "dsDNA", "Vimentin"]
         print(patient_number_new_experiment)
         print(proteins_list_to_predict)
         print(list_of_proteins_to_train)
-        new_experiment.predict_k_proteins(viewer, df, df_new_experiment, patient_number_new_experiment,
-                                          proteins_list_to_predict, list_of_proteins_to_train, patient_cellLabel_image)
+        new_experiment.predict_k_proteins(viewer, df,df_new_experiment,patient_number_new_experiment, proteins_list_to_predict, list_of_proteins_to_train, patient_cellLabel_image_new_experiment, comboBox_model)
+        _update_choices_on_file_change(widget)
         show_info('done predict proteins')
+
+
 
     @widget.filename.changed.connect
     def update_choices_on_file_change(event=None):
@@ -178,11 +192,10 @@ def proteins_predict1():
         print(protein_to_predict)
         print(patient_number_new_experiment)
 
-        list_of_proteins_to_train = np.setdiff1d(np.intersect1d(df.columns, df_new_experiment.columns),
-                                                 ['SampleID', 'cellLabelInImage', 'cellSize', protein_to_predict])
+        list_of_proteins_to_train = np.setdiff1d(np.intersect1d(df.columns, df_new_experiment.columns),['SampleID', 'cellLabelInImage', 'cellSize', protein_to_predict])
         print(list_of_proteins_to_train)
         new_experiment.find_anomaly(viewer, df, df_new_experiment, patient_number_new_experiment,
-                                    protein_to_predict, list_of_proteins_to_train, patient_cellLabel_image)
+                                          protein_to_predict, list_of_proteins_to_train, patient_cellLabel_image)
 
     return widget
 
@@ -407,6 +420,7 @@ def patient_selection():
         protein_selection_button.setVisible(True)
         k_proteins_predict_button.setVisible(True)
         change_std_button.setVisible(True)
+
 
     return widget
 

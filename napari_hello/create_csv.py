@@ -18,17 +18,38 @@ import pandas as pd
 import scipy.stats as stats
 
 
-# delete the segmentation images from the list of proteins
+
 def delete_seg(patient, list_proteins):
+    """
+    Removes filenames containing "Segmentation" from the list_proteins.
+
+    Parameters:
+    - patient (str): Path to the patient directory.
+    - list_proteins (list): List of protein filenames.
+
+    Returns:
+    None. Modifies the list_proteins in place.
+
+    """
     for f in os.listdir(patient):
         if os.path.isfile(os.path.join(patient, f)):
             if "Segmentation" in f:
-                # print(f)
                 list_proteins.remove(f)
 
 
-# append data to the dataframe from region properties
 def append_data(labels_max, props, str):
+    """
+    Appends a specific property (attribute) value from each element in the 'props' list
+    to a new row_data list.
+
+    Parameters:
+    - labels_max (int): The maximum number of labels or elements in the props list.
+    - props (list): A list containing objects or instances with properties.
+    - str (str): The name of the property to extract from each element in the 'props' list.
+
+    Returns:
+    list: A new list 'row_data' containing the extracted property values from each element.
+    """
     row_data = []
     for index in range(0, labels_max):
         row_data.append(getattr(props[index], str))
@@ -37,15 +58,34 @@ def append_data(labels_max, props, str):
 
 # calculate the protein data for the cells
 def protein_culc(list_proteins, patient, labels_max, props, df):
+    """
+    Calculates protein expression level for each protein in the list_proteins and appends the results to the provided dataframe.
+
+    Parameters:
+    - list_proteins (list): List of protein filenames.
+    - patient (str): Path to the patient directory.
+    - labels_max (int): The maximum number of labels or elements in the props list.
+    - props (list): A list containing objects or instances with properties.
+    - df (pandas.DataFrame): The dataframe to which the calculated protein values will be appended.
+
+    Returns:
+    pandas.DataFrame: The modified dataframe with the calculated protein values.
+
+    Notes:
+    - The value for a cell's expression of a protein is the sum of the intensity values within the cell normalized by cell size and then an arcsinh transformation is applied.
+    For example, there could be a cell with a cell size of 377 pixels and with the sum of all pixel intensities within this cell for HH3.tif as 4939,
+    then its value for HH3 ≈ 13.1. The arcsinh transformation: ln(x + sqrt(1+x^2)) is applied after this normalization and that is provided in the CSV table
+    - also the normalized values are linearly scaled by a factor of 100 prior to arcsinh transformation.
+    So for this cell: arcsinh(100x) = arcsinh(1310) = 7.87 is the value that would be in the cellTable table.
+    """
     for protein in list_proteins:
         protein_IMG = Image.open("{}\{}".format(patient, protein))
-        print(f'protein calculate : {protein.split(".")[0]}')
-        # convert img to np array
-        protein_IMG = np.array(protein_IMG)
+        protein_IMG = np.array(protein_IMG) # convert img to np array
         col_pro = []
         for index in range(0, labels_max):
             list_of_indexes = getattr(props[index], 'coords')
             cell_size = getattr(props[index], 'area')
+
             x = protein_IMG[list_of_indexes].sum() / cell_size * 100
             col_pro.append(math.log(x + math.sqrt(1+math.pow(x, 2))))
         # calculate a z-score
