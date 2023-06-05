@@ -21,7 +21,7 @@ from napari_hello import find_anomaly
 from napari_hello import new_experiment
 from napari_hello import predict_k_proteins
 from napari_hello import new_experiment
-from napari_hello import segmentation
+# from napari_hello import segmentation
 from magicgui.widgets import Select
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -87,9 +87,12 @@ def _update_choices_on_file_change(widget):
         #print(tuple(sorted(widget.dropdown_patient.choices)))
         #widget.dropdown_patient.choices = tuple(sorted(widget.dropdown_patient.choices))
         widget.dropdown_patient.choices = choices_patient
+        print(tuple(sorted(widget.dropdown_patient.choices)))
+        widget.dropdown_patient.choices = tuple(sorted(widget.dropdown_patient.choices))
         print(widget.dropdown_patient.choices)
     if choices_find_anomaly is not None:
         widget.dropdown_find_anomaly.choices = choices_find_anomaly
+
 
 def proteins_predict1():
     @magicgui(
@@ -116,7 +119,7 @@ def proteins_predict1():
         ),
         other_button=dict(widget_type="PushButton", text="Find Anomaly"),
         call_button="Predict Proteins",
-        
+
     )
 
     def widget(viewer: napari.Viewer, dropdown_patient, dropdown,dropdown_find_anomaly,other_button,comboBox_model,filename=Path.home(), foldername=Path.home()):
@@ -324,34 +327,15 @@ def upload_exp():
     # todo:
     def widget(viewer: napari.Viewer, foldername=Path.home()):
         if Path.home() != foldername:
-            root = tk.Tk()
-            root.withdraw()
             global root_directory_path
             # open the directory dialog box and allow the user to select a directory
             root_directory_path = foldername
-            show_info("add path to root experiment directory")
+            show_info(f'root experiment directory chosen successfully')
             upload_exp_button.setVisible(False)
             new_exp_button.setVisible(True)
             old_exp_button.setVisible(True)
-            print("root: ", root_directory_path)
-    return widget
 
-# @magicgui(call_button='Upload Experiment')
-# def upload_exp():
-#     root = tk.Tk()
-#     root.withdraw()
-#
-#     global root_directory_path
-#     try:
-#         # open the directory dialog box and allow the user to select a directory
-#         root_directory_path = filedialog.askdirectory(title="choose the root experiment directory")
-#         show_info(f'root experiment directory chosen successfully')
-#     except:
-#         show_info("add path to root experiment directory")
-#     upload_exp_button.setVisible(False)
-#     new_exp_button.setVisible(True)
-#     old_exp_button.setVisible(True)
-#     return
+    return widget
 
 
 def find_cell_labeled_image(paths, patient_number):
@@ -389,7 +373,7 @@ def patient_selection():
         ),
         call_button='Select Patient',
     )
-    def widget( viewer: napari.Viewer,dropdown):
+    def widget(viewer: napari.Viewer, dropdown):
         if df is None:
             print("return patient widget")
             return widget
@@ -420,7 +404,6 @@ def patient_selection():
         protein_selection_button.setVisible(True)
         k_proteins_predict_button.setVisible(True)
         change_std_button.setVisible(True)
-
 
     return widget
 
@@ -461,12 +444,8 @@ def find_anomlayy():
         global layer_std
         show_info("starting to find anomaly")
         proteins_list = get_proteins_list(df)
-        prediction_matrix, real_protein_matrix, std_real, file_name_std, layer_std = find_anomaly.main(viewer, df,
-                                                                                                       patient_number,
-                                                                                                       protein,
-                                                                                                       model_name,
-                                                                                                       proteins_list,
-                                                                                                       patient_cellLabel_image)
+        prediction_matrix, real_protein_matrix, std_real, file_name_std, layer_std = \
+            find_anomaly.main(viewer, df, patient_number, protein, model_name, proteins_list, patient_cellLabel_image)
 
     return widget
 
@@ -516,9 +495,12 @@ def upload_CellTable_and_cellLabelImage(protein_widget, patients_widget, find_an
             _update_proteins_choices_on_file_changes(widget, protein_widget)
             _update_proteins_choices_on_file_changes(widget, find_anomaly_widget)
             _update_patient_choices_on_file_changes(widget, patients_widget)
+
     return widget
 
+
 DEFAULT_CHOICES_OF_PROTEINS = []
+
 
 def _update_proteins_choices_on_file_changes(filename_widget, dropdown_widget):
     """Return available choices of proteins from csv headers"""
@@ -597,52 +579,23 @@ def proteins_predict():
         predict_k_proteins.predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict, proteins_list,
                                               model_name, patient_cellLabel_image)
         show_info('done predict proteins')
+
     return widget
 
-
-global protein_widget
-global find_anomaly_widget
-global patients_widget
 
 protein_widget = proteins_predict()
 find_anomaly_widget = find_anomlayy()
 patients_widget = patient_selection()
 
-#
-# def update_choices(layer_data: LayerDataTuple):
-#     print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@2")
-#     global func_flag
-#     if func_flag==True:
-#         find_anomaly_widget = globals().get("find_anomaly_widget")
-#         protein_widget = globals().get("protein_widget")
-#         patients_widget = globals().get("patients_widget")
-#         # Update the choices for the dropdown widgets
-#         find_anomaly_widget.dropdown.choices = exp_proteins_choices
-#         protein_widget.dropdown.choices = exp_proteins_choices
-#         patients_widget.dropdown.choices = exp_patients_choices
-#
-
-# try:
-#     # # Connect the update_choices function to the viewer's events
-# viewer.layers.events.changed.connect(update_choices)
-#     viewer.layers.events.removed.connect(update_choices)
-#     viewer.layers.events.inserted.connect(update_choices)
-#     viewer.layers.events.removing.connect(update_choices)
-#     viewer.layers.events.reordered.connect(update_choices)
-#     # viewer.layers.selection.events.active.connect(update_choices)
-# except Exception as e:
-#     print(traceback.format_exc())
-
-####################################
-
 # upload, new, old experiment buttons:
 upload_exp_button = viewer.window.add_dock_widget(upload_exp(), area='right', name="Upload New Experiment")
 new_exp_button = viewer.window.add_dock_widget(new_exp, area='right', name="New Experiment")
 old_exp_button = viewer.window.add_dock_widget(old_exp, area='right', name="Old Experiment")
-# create buttons:
-create_segmentation_button = viewer.window.add_dock_widget(create_seggmentation, area='right', name="Create Segmentation")
-create_CSV_button = viewer.window.add_dock_widget(create_CSV, area='right', name="Create new CellTable")
 
+# create buttons:
+create_segmentation_button = viewer.window.add_dock_widget(create_seggmentation, area='right',
+                                                           name="Create Segmentation")
+create_CSV_button = viewer.window.add_dock_widget(create_CSV, area='right', name="Create new CellTable")
 
 # uplode buttons:
 # upload_segmentation_button = viewer.window.add_dock_widget(upload_segmentation, area='right')

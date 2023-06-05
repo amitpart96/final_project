@@ -156,7 +156,7 @@ def plot_graph_r2(DTR_r2_scores, model_name):
     plt.ylabel("r2 score")
     plt.title(model_name + " Scores")
     # plt.show()
-    return plt
+    return fig
 
 
 def plot_graph_cor(DTR_cor_scores, model_name):
@@ -231,14 +231,6 @@ def visual_prediction(df, proteins_to_predict, patient):
 
 
 def main(viewer, df, model_name, proteins_list, amount_of_patients):
-    # todo: delete this list
-    proteins_list = ["CD45", "dsDNA", "Vimentin"]
-    # proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31", "PD-L1",
-    #                  "EGFR",
-    #                  "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO",
-    #                  "CD20",
-    #                  "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
-    #                  "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
     DTR_cor_scores, DTR_r2_scores, DTR_prediction = ranking_model_avg(df, proteins_list, proteins_list, model_name,
                                                                       amount_of_patients)
     # r2 plot
@@ -256,29 +248,3 @@ def main(viewer, df, model_name, proteins_list, amount_of_patients):
 
 
 if __name__ == "__main__":
-
-    root = tk.Tk()
-    root.withdraw()
-    try:
-        global df
-        filename = fd.askopenfilename(title="open cellData csv")
-        print(filename)
-        df = pd.read_csv(filename)
-    except:
-        print("add path to cellData.csv in the code")
-    model_name = 'DecisionTree'
-    proteins_list = ["CD45", "dsDNA", "Vimentin", "SMA", "FoxP3", "Lag3", "CD4", "CD16", "CD56", "PD1", "CD31", "PD-L1",
-                     "EGFR",
-                     "Ki67", "CD209", "CD11c", "CD138", "CD68", "CD8", "CD3", "Keratin17", "IDO", "CD63", "CD45RO",
-                     "CD20",
-                     "p53", "Beta catenin", "HLA-DR", "CD11b", "H3K9ac", "Pan-Keratin", "H3K27me3",
-                     "phospho-S6", "MPO", "Keratin6", "HLA_Class_1"]
-
-    # predict_k_proteins check:
-    patient_number = 3
-    list_of_proteins_to_predict = ['CD45', 'CD4']
-    predict_k_proteins(None, df, patient_number, list_of_proteins_to_predict, proteins_list, model_name)
-
-    # # ranking_model_avg check:
-    # amount_of_patients=41
-    # DTR_cor_scores, DTR_r2_scores, DTR_prediction = ranking_model_avg(df, proteins_list,proteins_list, model_name, amount_of_patients)
