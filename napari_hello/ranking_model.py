@@ -15,21 +15,42 @@ import xgboost as xgb
 
 
 def save_img(matrix, file_name):
+    """
+    Saves the matrix as a TIFF image file with the specified file name.
+
+    Parameters:
+    - matrix: The matrix as a NumPy array.
+    - file_name: The desired file name for the saved image.
+
+    Returns:
+    - image_filename: The name of the saved image file.
+    """
     matrix = (matrix * 255).round().astype(np.uint8)
     new_im = Image.fromarray(matrix)
-    # new_im.show()
     image_filename = f'{file_name}.tiff'
-    print(image_filename)
-    # save image using extension
     new_im.save(image_filename)
     return image_filename
 
 
 def ranking_model(df, patient_number, list_of_proteins_to_predict, proteins_list, model_name):
+    """
+    Performs ranking and prediction for a list of proteins using a specified model.
+
+    Parameters:
+    - df: The input DataFrame containing protein data.
+    - patient_number: The patient number for whom predictions are made.
+    - list_of_proteins_to_predict: A list of proteins to predict.
+    - proteins_list: The complete list of proteins in the DataFrame.
+    - model_name: The name of the model to use for prediction ('XGBoost' or Decision-Tree).
+
+    Returns:
+    - DTR_cor_scores: A Counter object containing correlation scores for each predicted protein.
+    - DTR_r2_scores: A Counter object containing R-squared scores for each predicted protein.
+    - DTR_predictions: A Counter object containing predictions for each protein.
+    """
     df = df.copy()
     DTR_cor_scores, DTR_r2_scores, DTR_predictions = Counter(), Counter(), Counter()
 
-    print(f'testing patient number :{patient_number}\n')
     df_train = df.loc[
         df['SampleID'] != patient_number]  # takes all patients for train, without patient patient_number for test
     df_test = df.loc[df['SampleID'] == patient_number]  # takes only patient patient_number for test
@@ -37,7 +58,6 @@ def ranking_model(df, patient_number, list_of_proteins_to_predict, proteins_list
     for protein in list_of_proteins_to_predict:
         # predict one protein , we will put it inside Y_train:
         y_train, y_test = df_train[protein], df_test[protein]
-        print(f'predicting protein: {protein}')
         # we will put all the rest proteins inside X_train:
         pl_copy = proteins_list.copy()
         pl_copy.remove(protein)
@@ -47,9 +67,6 @@ def ranking_model(df, patient_number, list_of_proteins_to_predict, proteins_list
             DTR_cor_score, DTR_r2_score, DTR_prediction = model_XGBoostRegressor(X_train, y_train, X_test, y_test)
         else:
             DTR_cor_score, DTR_r2_score, DTR_prediction = model_DecisionTreeRegressor(X_train, y_train, X_test, y_test)
-        print(f'DTR r2 score: {DTR_r2_score}')
-        print(f'DTR cor score: {DTR_cor_score[0, 1]}\n')
-        # print("DTR prediction: " + str(DTR_prediction))
 
         DTR_cor_scores[protein] = float(DTR_cor_score[0, 1])
         DTR_r2_scores[protein] = DTR_r2_score
@@ -59,12 +76,25 @@ def ranking_model(df, patient_number, list_of_proteins_to_predict, proteins_list
 
 
 def ranking_model_avg(df, list_of_proteins_to_predict, proteins_list, model_name, amount_of_patients):
-    print(model_name)
+    """
+    Performs ranking and prediction for a list of proteins using a specified model, averaging the scores over multiple patients.
+
+    Parameters:
+    - df: The input DataFrame containing protein data.
+    - list_of_proteins_to_predict: A list of proteins to predict.
+    - proteins_list: The complete list of proteins in the DataFrame.
+    - model_name: The name of the model to use for prediction ("XGBoost" or "Decision-Tree").
+    - amount_of_patients: The number of patients to consider for averaging the scores.
+
+    Returns:
+    - cor_scores: A Counter object containing average correlation scores for each predicted protein.
+    - r2_scores: A Counter object containing average R-squared scores for each predicted protein.
+    - predictions: A Counter object containing averaged predictions for each protein.
+    """
     df = df.copy()
     cor_scores, r2_scores, predictions = Counter(list()), Counter(list()), Counter(list())
     random_patients = random.sample(range(1, amount_of_patients + 1), min(5, amount_of_patients))
     for patient_number in random_patients:
-        print(f'testing patient number :{patient_number}\n')
         df_train = df.loc[
             df['SampleID'] != patient_number]  # takes all patients for train, without patient patient_number for test
         df_test = df.loc[df['SampleID'] == patient_number]  # takes only patient patient_number for test
@@ -72,7 +102,6 @@ def ranking_model_avg(df, list_of_proteins_to_predict, proteins_list, model_name
         for protein in list_of_proteins_to_predict:
             # predict one protein , we will put it inside Y_train:
             y_train, y_test = df_train[protein], df_test[protein]
-            print(f'predicting protein: {protein}')
             # we will put all the rest proteins inside X_train:
             pl_copy = proteins_list.copy()
             pl_copy.remove(protein)
@@ -83,32 +112,37 @@ def ranking_model_avg(df, list_of_proteins_to_predict, proteins_list, model_name
             else:
                 cor_score, r2_score, prediction = model_DecisionTreeRegressor(X_train, y_train, X_test,
                                                                               y_test)
-            print(f'r2 score: {r2_score}')
-            print(f'cor score: {cor_score[0, 1]}\n')
-            # print("DTR prediction: " + str(DTR_prediction))
 
             cor_scores[protein] = cor_scores.get(protein, []) + [float(abs(cor_score[0, 1]))]
             if (r2_score < 0):
                 r2_score = 0
             r2_scores[protein] = r2_scores.get(protein, []) + [r2_score]
             predictions[protein] = predictions.get(protein, []) + [prediction]
-    print(f'cor_scores dict before avg: {cor_scores}')
-    print(f'r2_scores dict before avg: {r2_scores}')
 
     for protein, value_list in cor_scores.items():
         cor_scores[protein] = sum(cor_scores[protein]) / len(cor_scores[protein])
         r2_scores[protein] = sum(r2_scores[protein]) / len(r2_scores[protein])
-    print(f'cor_scores dict after avg: {cor_scores}')
-    print(f'r2_scores dict after avg: {r2_scores}')
     return cor_scores, r2_scores, predictions
 
 
 def model_DecisionTreeRegressor(X_train, y_train, X_test, y_test):
+    """
+    Trains a Decision Tree regressor model using the provided training data and makes predictions on the test data.
+
+    Parameters:
+    - X_train: The input features for training.
+    - y_train: The target variable for training.
+    - X_test: The input features for testing.
+    - y_test: The target variable for testing.
+
+    Returns:
+    - cor: The correlation scores between y_test and the predictions.
+    - r2: The R-squared score between y_test and the predictions.
+    - prediction: The predicted values.
+    """
     regressor = DecisionTreeRegressor(random_state=0).fit(X_train, y_train)
     prediction = regressor.predict(X_test)
     if np.std(y_test.to_numpy()) == 0 or np.std(prediction) == 0:
-        print(
-            "The correlation could not be computed because the standard deviation of one of the series is equal to zero")
         cor = np.zeros((2, 2))
     else:
         cor = calculate_correlation(y_test, prediction)
@@ -117,11 +151,23 @@ def model_DecisionTreeRegressor(X_train, y_train, X_test, y_test):
 
 
 def model_XGBoostRegressor(X_train, y_train, X_test, y_test):
-    regressor = xgb.XGBRegressor(random_state=0).fit(X_train, y_train)  # Instantiate XGBoost regressor
+    """
+   Trains an XGBoost regressor model using the provided training data and makes predictions on the test data.
+
+   Parameters:
+   - X_train: The input features for training.
+   - y_train: The target variable for training.
+   - X_test: The input features for testing.
+   - y_test: The target variable for testing.
+
+   Returns:
+   - cor: The correlation scores between y_test and the predictions.
+   - r2: The R-squared score between y_test and the predictions.
+   - prediction: The predicted values.
+    """
+    regressor = xgb.XGBRegressor(random_state=0).fit(X_train, y_train)
     prediction = regressor.predict(X_test)
     if np.std(y_test.to_numpy()) == 0 or np.std(prediction) == 0:
-        print(
-            "The correlation could not be computed because the standard deviation of one of the series is equal to zero")
         cor = np.zeros((2, 2))
     else:
         cor = calculate_correlation(y_test, prediction)
@@ -130,17 +176,44 @@ def model_XGBoostRegressor(X_train, y_train, X_test, y_test):
 
 
 def calculate_correlation(y_test, prediction):
-    print(f'y_test.to_numpy():{y_test.to_numpy()}')
-    print(f'prediction: {prediction}')
+    """
+    Calculates the correlation scores between y_test and the predictions.
+
+    Parameters:
+    - y_test: The actual target values.
+    - prediction: The predicted values.
+
+    Returns:
+    - The correlation matrix.
+    """
     return np.corrcoef(y_test.to_numpy(), prediction)
 
 
 def calculate_r2_score(y_test, prediction):
+    """
+    Calculates the R-squared score between y_test and the predictions.
+
+    Parameters:
+    - y_test: The actual target values.
+    - prediction: The predicted values.
+
+    Returns:
+    - The R-squared score.
+    """
     return r2_score(y_test.to_numpy(), prediction)
 
 
 def plot_graph_r2(DTR_r2_scores, model_name):
-    # creating the dataset
+    """
+    Plot a bar graph of R-squared scores for different proteins.
+
+    Parameters:
+    - DTR_r2_scores (dict): A dictionary containing R-squared scores for different proteins.
+    - model_name (str): The name of the model.
+
+    Returns:
+    - fig: The matplotlib figure object.
+    """
     data = DTR_r2_scores
     proteins = list(data.keys())
     scores = list(data.values())
@@ -155,12 +228,20 @@ def plot_graph_r2(DTR_r2_scores, model_name):
     plt.xlabel("Proteins")
     plt.ylabel("r2 score")
     plt.title(model_name + " Scores")
-    # plt.show()
     return fig
 
 
 def plot_graph_cor(DTR_cor_scores, model_name):
-    # creating the dataset
+    """
+    Plot a bar graph of correlation scores for different proteins.
+
+    Parameters:
+    - DTR_cor_scores (dict): A dictionary containing correlation scores for different proteins.
+    - model_name (str): The name of the model.
+
+    Returns:
+    - fig: The matplotlib figure object.
+    """
     data = DTR_cor_scores
     proteins = list(data.keys())
     scores = list(data.values())
@@ -175,27 +256,47 @@ def plot_graph_cor(DTR_cor_scores, model_name):
     plt.xlabel("Proteins")
     plt.ylabel("Correlation score")
     plt.title(model_name + " Scores")
-    # plt.show()
     return fig
 
 
 def prediction_matrix_creation(DTR_prediction, df, patient_number, cellLabel_image):
-    print(f'inside prediction_matrix_creation: DTR_prediction:\n{DTR_prediction}')
+    """
+    Create a prediction matrix based on the Deep Tissue Regression (DTR) predictions.
+
+    Parameters:
+    - DTR_prediction (list): A list of DTR predictions.
+    - df (DataFrame): The input DataFrame containing the data.
+    - patient_number (int): The number representing the test patient.
+    - cellLabel_image (ndarray): An ndarray representing the cell labels in the image.
+
+    Returns:
+    - protein_prediction (ndarray): A 2D ndarray representing the prediction matrix.
+    """
     df = df.copy()
     protein_prediction = np.zeros((np.size(cellLabel_image,0), np.size(cellLabel_image,1)))
 
     patient_numer_df = df.loc[df['SampleID'] == patient_number]  # takes only the test patient
     protein_cellLabel_df = patient_numer_df[['cellLabelInImage']]
     protein_cellLabel_df['prediction'] = list(DTR_prediction)
-    print(f'inside prediction_matrix_creation: protein_cellLabel_df:\n{protein_cellLabel_df}')
 
     for index, row in protein_cellLabel_df.iterrows():
         protein_prediction[cellLabel_image == int(row['cellLabelInImage'])] = float(row['prediction'])
-
     return protein_prediction
 
 
 def real_protein_matrix_creation(df, patient, protein, cellLabel_image):
+    """
+    Create a real protein matrix based on the patient's protein values.
+
+    Parameters:
+    - df (DataFrame): The input DataFrame containing the data.
+    - patient (int): The number representing the patient.
+    - protein (str): The name of the protein.
+    - cellLabel_image (ndarray): An ndarray representing the cell labels in the image.
+
+    Returns:
+    - real_protein_matrix (ndarray): A 2D ndarray representing the real protein matrix.
+    """
     df = df.copy()
     patient_numer_df = df.loc[df['SampleID'] == patient]  # takes only the patient
     protein_cellLabel_df = patient_numer_df[['cellLabelInImage', protein]]
@@ -207,8 +308,15 @@ def real_protein_matrix_creation(df, patient, protein, cellLabel_image):
 
 
 def visual_prediction(df, proteins_to_predict, patient):
+    """
+    Perform visual prediction analysis for a patient.
+
+    Parameters:
+    - df (DataFrame): The input DataFrame containing the data.
+    - proteins_to_predict (list): A list of proteins to predict.
+    - patient (int): The number representing the patient.
+    """
     df = df.copy()
-    print(f'starting patient number: {patient}')
     flag = True
     # get from user cellLabel image:
     while flag:
@@ -226,7 +334,6 @@ def visual_prediction(df, proteins_to_predict, patient):
         prediction_matrix = prediction_matrix_creation(protein_prediction, df, patient, cellLabel_image)
         # prediction matrix to image:
         save_img(prediction_matrix, f'protein_prediction_{patient}_{protein}')
-    print(f'finished patient number: {patient}')
     return
 
 
@@ -247,4 +354,3 @@ def main(viewer, df, model_name, proteins_list, amount_of_patients):
                      name='plot_cor_ranking')  # Adds the image to the viewer and give the image layer a name
 
 
-if __name__ == "__main__":
