@@ -10,6 +10,28 @@ from PIL import Image
 
 
 def find_anomaly(df, protein, patient, model_name,proteins_list,patient_cellLabel_image):  # todo: change name to find anomaly
+    """
+    Find anomalies in protein predictions and generate visualizations.
+
+    Parameters:
+    - df (pd.DataFrame): The DataFrame containing protein data.
+    - protein (str): The name of the protein to analyze.
+    - patient (str): The identifier of the patient.
+    - model_name (str): The name of the predicion model.
+    - proteins_list (list): A list of proteins to consider in the analysis.
+    - patient_cellLabel_image (np.ndarray): The cell label image for the patient.
+
+    Returns:
+    Tuple: A tuple containing the following:
+    - real_img (str): The filename of the saved image showing the real protein distribution.
+    - pred_img (str): The filename of the saved image showing the predicted protein distribution.
+    - diff_img (str): The filename of the saved image showing the difference between the real and predicted protein distributions.
+    - diff_img_std (str): The filename of the saved image showing the difference between the real and predicted protein distributions normalized by standard deviation.
+    - prediction_matrix (np.ndarray): The matrix representing the predicted protein distribution.
+    - real_protein_matrix (np.ndarray): The matrix representing the real protein distribution.
+    - std_real (float): The standard deviation of the real protein distribution.
+    - file_name_std (str): The filename of the saved image showing the difference matrix normalized by standard deviation.
+    """
     df = df.copy()
     scores, r2_scores, prediction = ranking_model.ranking_model(df, patient, protein,proteins_list, model_name)
 
@@ -22,7 +44,6 @@ def find_anomaly(df, protein, patient, model_name,proteins_list,patient_cellLabe
         real_img = ranking_model.save_img(real_protein_matrix, f'real_protein_{patient}_{protein}')
         # std of the real matrix
         std_real = real_protein_matrix.std()
-        print(std_real)
         # difference by std
         difference_matrix_std = create_difference_matrix_std(prediction_matrix, real_protein_matrix, std_real)
         difference_matrix = abs(np.subtract(real_protein_matrix, prediction_matrix))
@@ -34,6 +55,18 @@ def find_anomaly(df, protein, patient, model_name,proteins_list,patient_cellLabe
 
 
 def create_difference_matrix_std(prediction_matrix, real_protein_matrix, std_real):
+    """
+    Create a difference matrix based on the standard deviation.
+
+    Parameters:
+    - prediction_matrix (np.ndarray): The matrix representing the predicted protein distribution.
+    - real_protein_matrix (np.ndarray): The matrix representing the real protein distribution.
+    - std_real (float): The standard deviation of the real protein distribution.
+
+    Returns:
+    np.ndarray: The difference matrix where values greater than or equal to 2 times the standard deviation are True,
+                and values less than 2 times the standard deviation are False.
+    """
     difference_matrix_std_tmp = abs(np.subtract(prediction_matrix, real_protein_matrix))
     difference_matrix_std = (difference_matrix_std_tmp >= 2 * std_real)
     return difference_matrix_std
@@ -41,6 +74,21 @@ def create_difference_matrix_std(prediction_matrix, real_protein_matrix, std_rea
 
 def update_difference_matrix_std(viewer, prediction_matrix, real_protein_matrix, std_real, slider_float, file_name_std,
                                  layer_std):
+    """
+    Update the difference matrix std based on the standard deviation and display it in the viewer.
+
+    Parameters:
+    - viewer (napari.viewer.Viewer): The Napari viewer object.
+    - prediction_matrix (np.ndarray): The matrix representing the predicted protein distribution.
+    - real_protein_matrix (np.ndarray): The matrix representing the real protein distribution.
+    - std_real (float): The standard deviation of the real protein distribution.
+    - slider_float (float): The slider value representing the threshold multiplier.
+    - file_name_std (str): The file name of the saved difference matrix image.
+    - layer_std (napari.layers.Image): The Napari image layer for the difference matrix.
+
+    Returns:
+    None
+    """
     difference_matrix_std_tmp = abs(np.subtract(prediction_matrix, real_protein_matrix))
     difference_matrix_std = (difference_matrix_std_tmp >= slider_float * std_real)
     diff_img_std = ranking_model.save_img(difference_matrix_std, file_name_std)

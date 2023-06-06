@@ -95,23 +95,59 @@ def protein_culc(list_proteins, patient, labels_max, props, df):
     return df
 
 
-# create the labeled cell data matrix
+
 def labeledcellData_matrix_create(shape):
+    """
+    Creates a labeled cell data matrix with the specified shape, initialized with ones.
+
+    Parameters:
+    - shape (tuple): The shape of the desired matrix, expressed as a tuple (size1, size2).
+
+    Returns:
+    numpy.ndarray: A matrix of the specified shape filled with ones.
+
+    Example:
+    >> shape = (2048, 2048)
+    >> result = labeledcellData_matrix_create(shape)
+    >> print(result)
+    Output: A 2048x2048 matrix filled with ones.
+    """
     size1 = shape[0]
     size2 = shape[1]
     labeledcellData_matrix = np.ones((size1, size2))
     return labeledcellData_matrix
 
 
-# update the labeled cell data matrix
+
 def labeledcellData_matrix_update(labeledcellData_matrix, index, list_of_indexes):
+    """
+    Updates the labeled cell data matrix with a specific index for a given list of indexes.
+
+    Parameters:
+    - labeledcellData_matrix (numpy.ndarray): The labeled cell data matrix to update.
+    - index (int): The index to assign to the specified list of indexes.
+    - list_of_indexes (list): A list of index coordinates (x, y) to update in the matrix.
+
+    Returns:
+    numpy.ndarray: The updated labeled cell data matrix.
+    """
     for x, y in list_of_indexes:
         labeledcellData_matrix[x, y] = index + 1
     return labeledcellData_matrix
 
 
-# write the dataframe to a csv file.
+
 def write_csv(file, df):
+    """
+    Writes a pandas DataFrame to a CSV file.
+
+    Parameters:
+    - file (file object): The file object representing the CSV file to write.
+    - df (pandas.DataFrame): The DataFrame to write to the CSV file.
+
+    Returns:
+    str: If the DataFrame is None, returns "Error". Otherwise, returns None.
+    """
     if df is None:
         return "Error"
     df.to_csv(file.name, index=False)
@@ -119,6 +155,15 @@ def write_csv(file, df):
 
 # create the csv file
 def create_csv(root_directory_path):
+    """
+    Prompts the user to select a file name and directory to create a new CSV file.
+
+    Parameters:
+    - root_directory_path (str): The root directory path used as a starting point for file selection.
+
+    Returns:
+    file object: The file object representing the created CSV file.
+    """
     global root_dir
     root = tk.Tk()
     root.withdraw()
@@ -132,18 +177,23 @@ def create_csv(root_directory_path):
     return file
 
 
-# This function finds the subfolders of the patients and returns a list of tuples with the path and name of each sub
-# folder
 def patient(path):
+    """
+    Process patient data to create a dataframe with information about the cells and proteins.
+
+    Parameters:
+    - path (str): The path to the root directory containing patient subfolders.
+
+    Returns:
+    pandas.DataFrame: A dataframe containing information about the cells and proteins. for each cell contains its index, cellSize, and protein expression level for eech of the proteins
+    """
     # find the subfolders of the patients - each sujbfolder is one patient that contains his proteins and a segmantation
     list_subfolders_with_paths = [(f.path, f.name) for f in os.scandir(root_dir) if f.is_dir()]
-    print(list_subfolders_with_paths)
     result = []
 
     # For each patient subfolder, create a dataframe with information about the cells in the segmentation image
     for patient in list_subfolders_with_paths:
         df = pd.DataFrame()
-        print(f'patient: {patient[1]}')
         # Get a list of all the protein image files in the patient's subfolder
         list_proteins = ([f for f in os.listdir(patient[0]) if os.path.isfile(os.path.join(patient[0], f))])
         # filter the images of the proteins so that they will not contain the segmentation
@@ -176,13 +226,22 @@ def patient(path):
         # Calculate information about each protein in the patient's subfolder and add it to the dataframe
         protein_culc(list_proteins, patient[0], labels_max, props, df)
         result.append(df)
-        print(f"Done Calculate for patient: {patient[1]}")
     result = pd.concat(result)
     return result
 
 
 # This function saves a matrix as an image file with the specified name
 def save_img(matrix, file_name):
+    """
+   Save a matrix as an image file.
+
+   Parameters:
+   - matrix (numpy.ndarray): The matrix to be saved as an image.
+   - file_name (str): The desired name of the image file.
+
+   Returns:
+   str: The filename (including the extension) of the saved image.
+   """
     matrix = matrix.astype(np.uint16)
     print(np.amax(matrix))
     new_im = Image.fromarray(matrix)
