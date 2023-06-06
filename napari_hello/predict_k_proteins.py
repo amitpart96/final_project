@@ -16,10 +16,25 @@ from napari_hello import ranking_model
 
 
 def predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict, proteins_list, model_name,cellLabel_image):
+    """
+    Predict the values of multiple proteins for a given patient and visualize the predictions in the viewer.
+
+    Parameters:
+    - viewer (napari.viewer.Viewer): The Napari viewer object.
+    - df (pd.DataFrame): The DataFrame containing the protein data.
+    - patient_number (int): The identifier of the patient for prediction.
+    - list_of_proteins_to_predict (list): A list of protein names to predict.
+    - proteins_list (list): A list of all available protein names.
+    - model_name (str): The name of the prediction model to use (either 'XGBoost' or 'DecisionTree').
+    - cellLabel_image (np.ndarray): The cell label image corresponding to the patient.
+
+    Returns:
+    - DTR_cor_score (float): The correlation score of the predictions.
+    - DTR_r2_score (float): The R2 score of the predictions.
+    - prediction (np.ndarray): The predicted protein values.
+    """
     df = df.copy()
-    print(f'testing patient number :{patient_number}\n')
-    df_train = df.loc[
-        df['SampleID'] != patient_number]  # takes all patients for train, without patient patient_number for test
+    df_train = df.loc[df['SampleID'] != patient_number]  # takes all patients for train, without patient patient_number for test
     df_test = df.loc[df['SampleID'] == patient_number]  # takes only patient patient_number for test
 
     # predict one protein , we will put it inside Y_train:
@@ -53,18 +68,29 @@ def predict_k_proteins(viewer, df, patient_number, list_of_proteins_to_predict, 
         img_name = f'protein_prediction_{patient_number}_{protein_name}'
         img = ranking_model.save_img(protein_prediction_matrix, img_name)
         protein_prediction_image = imread(img)
-        # for pycharm run test, uncomment the next 2 rows:
-        # cellLabel_image = Image.open(img)
-        # print(np.asarray(cellLabel_image))
-        # comment the next row when checking in napari
         viewer.add_image(protein_prediction_image, name=img_name)  # Adds the image to the viewer and give the image layer a name
 
     viewer.add_image(cor_plt_name, name="Correlation comparison")
     viewer.add_image(r2_plt_name, name="r2 comparison")
     return DTR_cor_score, DTR_r2_score, prediction
 
-def check_prediction_score(df, df_test, patient_number, multy_prediction, list_of_proteins_to_predict, proteins_list,
-                           model_name):
+def check_prediction_score(df, df_test, patient_number, multy_prediction, list_of_proteins_to_predict, proteins_list, model_name):
+    """
+    Compare the prediction scores for multiple proteins and generate visualizations.
+
+    Parameters:
+    - df (pd.DataFrame): The DataFrame containing the protein data.
+    - df_test (pd.DataFrame): The DataFrame containing the test data for the patient.
+    - patient_number (int): The identifier of the patient for prediction.
+    - multy_prediction (np.ndarray): The predicted protein values for multiple proteins.
+    - list_of_proteins_to_predict (list): A list of protein names to predict.
+    - proteins_list (list): A list of all available protein names.
+    - model_name (str): The name of the prediction model used.
+
+    Returns:
+    - cor_plt_name (str): The filename of the correlation comparison plot.
+    - r2_plt_name (str): The filename of the R2 score comparison plot.
+    """
     cor_scores_counter = Counter()
     r2_scores_counter = Counter()
     cor_scores, r2_scores, single_predictions = ranking_model.ranking_model(df, patient_number, list_of_proteins_to_predict,
@@ -88,15 +114,22 @@ def check_prediction_score(df, df_test, patient_number, multy_prediction, list_o
         # save in counter
         cor_scores_counter[protein_name] = [multi_prediction_cor_score[0, 1], single_prediction_cor_score]
         r2_scores_counter[protein_name] = [multi_prediction_r2_score, single_prediction_r2_score]
-        print(f'cor_scores_counter for protein:{protein_name} : {cor_scores_counter}')
-        print(f'r2_scores_counter for protein:{protein_name} : {r2_scores_counter}')
-    print(f'cor_scores_counter : {cor_scores_counter}')
     cor_plt_name= plot_comparison_prediction_scores(cor_scores_counter, "Correlation")
-    print(f'r2_scores_counter: {r2_scores_counter}')
     r2_plt_name=plot_comparison_prediction_scores(r2_scores_counter, "r2")
     return cor_plt_name,r2_plt_name
 
 def plot_comparison_prediction_scores(cor_scores_counter,score_name):
+    """
+    Generate a comparison plot for prediction scores.
+
+    Parameters:
+    - cor_scores_counter (Counter): A counter object containing the prediction scores.
+    - score_name (str): The name of the prediction score (e.g., "Correlation", "R2").
+
+    Returns:
+    - napari_image (np.ndarray): The generated comparison plot image.
+    """
+
     # Extract protein names and scores
     protein_names = list(cor_scores_counter.keys())
     scores1 = [cor_scores_counter[protein_name][0] for protein_name in protein_names]
