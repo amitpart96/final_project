@@ -37,7 +37,10 @@ def main(root_directory_path):
     # choose nuclear
     root = tk.Tk()
     root.withdraw()
-    root_dir1 = filedialog.askopenfiles(initialdir=subfiles_patient1, title="choose images for for nuclear")
+    while(True):
+        root_dir1 = filedialog.askopenfiles(initialdir=subfiles_patient1, title="choose images for for nuclear")
+        if(len(root_dir1) > 0): break
+
     filespath = [os.path.splitext(f.name)[0] for f in root_dir1]
     filesname_nuclear = [os.path.basename(filename) for filename in
                          filespath]  # get the base filename without the directory path
@@ -45,7 +48,9 @@ def main(root_directory_path):
     # choose membrane
     root = tk.Tk()
     root.withdraw()
-    root_dir1 = filedialog.askopenfiles(initialdir=subfiles_patient1, title="choose images for for membrane")
+    while(True):
+        root_dir1 = filedialog.askopenfiles(initialdir=subfiles_patient1, title="choose images for for membrane")
+        if(len(root_dir1) > 0): break
     filespath = [os.path.splitext(f.name)[0] for f in root_dir1]
     filesname_membrane = [os.path.basename(filename) for filename in
                           filespath]  # get the base filename without the directory path
