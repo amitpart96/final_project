@@ -21,7 +21,7 @@ from napari_hello import find_anomaly
 from napari_hello import new_experiment
 from napari_hello import predict_k_proteins
 from napari_hello import new_experiment
-# from napari_hello import segmentation
+from napari_hello import segmentation
 from magicgui.widgets import Select
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
@@ -62,20 +62,14 @@ def _update_choices_on_file_change(widget):
     filename = widget.filename.value
     choices = None
     choices_patient = None
-    choices_find_anomaly = None
     global df_new_experiment
     widget.dropdown.choices = choices = ()
     widget.dropdown_patient.choices = ()
-    widget.dropdown_find_anomaly.choices = ()
     if filename.is_file():
         if filename.suffix == ".csv":
             df_new_experiment = pd.read_csv(filename)
             choices = sorted(set(df.columns) - set(df_new_experiment.columns))
             choices_patient = sorted(df_new_experiment["SampleID"].drop_duplicates())
-            choices_find_anomaly = sorted(np.setdiff1d(np.intersect1d(df.columns, df_new_experiment.columns),np.array(['SampleID', 'cellLabelInImage', 'cellSize'])))
-            print(choices_patient)
-            print(choices)
-            print(choices_find_anomaly)
         else:
             show_warning(f"File {filename} is not a .csv file.")
     if choices is not None:
@@ -87,12 +81,7 @@ def _update_choices_on_file_change(widget):
         #print(tuple(sorted(widget.dropdown_patient.choices)))
         #widget.dropdown_patient.choices = tuple(sorted(widget.dropdown_patient.choices))
         widget.dropdown_patient.choices = choices_patient
-        print(tuple(sorted(widget.dropdown_patient.choices)))
-        widget.dropdown_patient.choices = tuple(sorted(widget.dropdown_patient.choices))
         print(widget.dropdown_patient.choices)
-    if choices_find_anomaly is not None:
-        widget.dropdown_find_anomaly.choices = choices_find_anomaly
-
 
 def proteins_predict1():
     @magicgui(
@@ -111,18 +100,14 @@ def proteins_predict1():
         dropdown=dict(
             widget_type="Select", choices=DEFAULT_CHOICES, label="Proteins to predict",
         ),
-        dropdown_find_anomaly=dict(
-            widget_type="ComboBox", choices=DEFAULT_CHOICES_find_anomaly, label="Proteins to predict- Find anomaly",
-        ),
         comboBox_model=dict(
-            widget_type="ComboBox", choices=['DesicionTree', 'XGBoost'], label="Patient to predict",
+            widget_type="ComboBox", choices=['DesicionTree', 'XGBoost'], label="model Selection",
         ),
-        other_button=dict(widget_type="PushButton", text="Find Anomaly"),
-        call_button="Predict Proteins",
-
+        call_button="Predict Proteins New Experiment",
+        
     )
 
-    def widget(viewer: napari.Viewer, dropdown_patient, dropdown,dropdown_find_anomaly,other_button,comboBox_model,filename=Path.home(), foldername=Path.home()):
+    def widget(viewer: napari.Viewer, dropdown_patient, dropdown,comboBox_model,filename=Path.home(), foldername=Path.home()):
         # Perform the prediction here
         if df is None:
             show_info("upload csv first")
@@ -184,21 +169,6 @@ def proteins_predict1():
     def update_choices_on_file_change(event=None):
         _update_choices_on_file_change(widget)
 
-    @widget.other_button.clicked.connect
-    def do_something_with_other_button():
-        # Perform other run button function here
-        print("Clicked the other button")
-        print(widget.dropdown_find_anomaly.value)
-
-        patient_number_new_experiment = widget.dropdown_patient.value
-        protein_to_predict = widget.dropdown_find_anomaly.value
-        print(protein_to_predict)
-        print(patient_number_new_experiment)
-
-        list_of_proteins_to_train = np.setdiff1d(np.intersect1d(df.columns, df_new_experiment.columns),['SampleID', 'cellLabelInImage', 'cellSize', protein_to_predict])
-        print(list_of_proteins_to_train)
-        new_experiment.find_anomaly(viewer, df, df_new_experiment, patient_number_new_experiment,
-                                          protein_to_predict, list_of_proteins_to_train, patient_cellLabel_image)
 
     return widget
 
@@ -296,7 +266,6 @@ def new_exp():
     ranking_model_button.setVisible(False)
     k_proteins_predict_button.setVisible(False)
     protein_selection_button.setVisible(False)
-    change_std_button.setVisible(False)
     other_exp_m_button.setVisible(False)
 
     new_exp_button.setVisible(False)
@@ -403,7 +372,6 @@ def patient_selection():
         patient_cellLabel_image = find_cell_labeled_image(cellLabelImages, patient_number)
         protein_selection_button.setVisible(True)
         k_proteins_predict_button.setVisible(True)
-        change_std_button.setVisible(True)
 
     return widget
 
@@ -416,9 +384,10 @@ def find_anomlayy():
         dropdown=dict(
             widget_type="ComboBox", choices=DEFAULT_CHOICES_find_anomalies, label="Protein to find anomalies",
         ),
+        slider_float={"widget_type": "FloatSlider", 'max': 10},
         call_button="Find anomalies",
     )
-    def widget(viewer: napari.Viewer, dropdown):
+    def widget(viewer: napari.Viewer, dropdown, slider_float=2):
         if df is None:
             show_info("upload csv first")
             return widget
@@ -445,20 +414,25 @@ def find_anomlayy():
         show_info("starting to find anomaly")
         proteins_list = get_proteins_list(df)
         prediction_matrix, real_protein_matrix, std_real, file_name_std, layer_std = \
-            find_anomaly.main(viewer, df, patient_number, protein, model_name, proteins_list, patient_cellLabel_image)
+            find_anomaly.main(viewer, df, patient_number, protein, model_name, proteins_list, patient_cellLabel_image, slider_float)
+
+    @widget.slider_float.changed.connect #new
+    def update_choices_on_slider_float_change(event=None): #new
+        _update_choices_on_slider_float_change(widget) #new
 
     return widget
 
+def _update_choices_on_slider_float_change(widget):
+    """Return available choices of proteins from csv headers"""
+    slider_float = widget.slider_float.value
+    try:
+        find_anomaly.update_difference_matrix_std(viewer, prediction_matrix, real_protein_matrix, std_real, slider_float, file_name_std, layer_std)
+    except:
+        return
 
-@magicgui(
-    call_button="change std",
-    slider_float={"widget_type": "FloatSlider", 'max': 10},
-)
-def widget_demo(slider_float=2):
-    print(slider_float)
-    find_anomaly.update_difference_matrix_std(viewer, prediction_matrix, real_protein_matrix, std_real, slider_float,
-                                              file_name_std, layer_std)
-    return
+
+
+
 
 
 def upload_CellTable_and_cellLabelImage(protein_widget, patients_widget, find_anomaly_widget):
@@ -609,11 +583,12 @@ patient_selection_button = viewer.window.add_dock_widget(patients_widget, area='
 patient_selection_button.setToolTip('Click on upload cellTable and cellLabelImages to refresh options')
 protein_selection_button = viewer.window.add_dock_widget(find_anomaly_widget, area='right', name="Find Anomalies")
 protein_selection_button.setToolTip('Click on upload cellTable and cellLabelImages to refresh options')
-change_std_button = viewer.window.add_dock_widget(widget_demo, area='right', name="Choose std for Anomalies")
+
 k_proteins_predict_button = viewer.window.add_dock_widget(protein_widget, name="Predict Proteins", area='right')
 
 other_exp_m_button = viewer.window.add_dock_widget(proteins_predict1(), name="Predict proteins new experiment",
                                                    area='right')
+
 new_exp_button.setVisible(False)
 old_exp_button.setVisible(False)
 create_segmentation_button.setVisible(False)
@@ -625,7 +600,6 @@ choose_model_button.setVisible(False)
 ranking_model_button.setVisible(False)
 k_proteins_predict_button.setVisible(False)
 protein_selection_button.setVisible(False)
-change_std_button.setVisible(False)
 other_exp_m_button.setVisible(False)
 
 
