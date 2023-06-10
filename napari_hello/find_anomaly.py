@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 
 
-def find_anomaly(df, protein, patient, model_name,proteins_list,patient_cellLabel_image):  # todo: change name to find anomaly
+def find_anomaly(df, protein, patient, model_name,proteins_list,patient_cellLabel_image, slider_float):  # todo: change name to find anomaly
     """
     Find anomalies in protein predictions and generate visualizations.
 
@@ -45,7 +45,7 @@ def find_anomaly(df, protein, patient, model_name,proteins_list,patient_cellLabe
         # std of the real matrix
         std_real = real_protein_matrix.std()
         # difference by std
-        difference_matrix_std = create_difference_matrix_std(prediction_matrix, real_protein_matrix, std_real)
+        difference_matrix_std = create_difference_matrix_std(prediction_matrix, real_protein_matrix, std_real, slider_float)
         difference_matrix = abs(np.subtract(real_protein_matrix, prediction_matrix))
         # difference_matrix to image:
         diff_img = ranking_model.save_img(difference_matrix, f'difference_matrix_{patient}_{protein}')
@@ -54,7 +54,7 @@ def find_anomaly(df, protein, patient, model_name,proteins_list,patient_cellLabe
     return real_img, pred_img, diff_img, diff_img_std, prediction_matrix, real_protein_matrix, std_real, file_name_std  # ??
 
 
-def create_difference_matrix_std(prediction_matrix, real_protein_matrix, std_real):
+def create_difference_matrix_std(prediction_matrix, real_protein_matrix, std_real, slider_float):
     """
     Create a difference matrix based on the standard deviation.
 
@@ -68,7 +68,7 @@ def create_difference_matrix_std(prediction_matrix, real_protein_matrix, std_rea
                 and values less than 2 times the standard deviation are False.
     """
     difference_matrix_std_tmp = abs(np.subtract(prediction_matrix, real_protein_matrix))
-    difference_matrix_std = (difference_matrix_std_tmp >= 2 * std_real)
+    difference_matrix_std = (difference_matrix_std_tmp >= slider_float * std_real)
     return difference_matrix_std
 
 
@@ -98,10 +98,10 @@ def update_difference_matrix_std(viewer, prediction_matrix, real_protein_matrix,
     layer_std.data = napari_image
 
 
-def main(viewer, df, patient_number, protein, model_name,proteins_list,patient_cellLabel_image):
+def main(viewer, df, patient_number, protein, model_name,proteins_list,patient_cellLabel_image, slider_float):
     list_of_proteins_to_predict = [protein]
     real_img, pred_img, diff_img, diff_img_std, prediction_matrix, real_protein_matrix, std_real, file_name_std = find_anomaly(
-        df, list_of_proteins_to_predict, patient_number, model_name,proteins_list,patient_cellLabel_image)  # ??
+        df, list_of_proteins_to_predict, patient_number, model_name,proteins_list,patient_cellLabel_image, slider_float)  # ??
     napari_image = imread(real_img)  # Reads an image from file
     viewer.add_image(napari_image, name=real_img)  # Adds the image to the viewer and give the image layer a name
     napari_image = imread(pred_img)  # Reads an image from file
